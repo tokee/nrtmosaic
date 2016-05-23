@@ -33,8 +33,7 @@ For usable performance, we can cache all tiles from 16x16 pixels and below. That
 
 ## Mapping
 
-The single pixels from the source image must be mapped to 2:3 aspect ratio destination images. This is done by mapping
-1x3 pixels in source to 1x2 images in destination.
+The single pixels from the source image must be mapped to 2:3 aspect ratio destination images. This is done by mapping 1x3 pixels in source to 1x2 images in destination.
 
 To find the top image for 1x1½ pixel, the average of the upper 4 pixels `[0,0][1,0][0,1][1,1]` and the average of
 then lower 2 pixels `[0,2][1,2]` is needed. The distance of the upper 1 pixel from source to the first average should
