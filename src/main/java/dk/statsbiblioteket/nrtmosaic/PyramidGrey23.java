@@ -124,4 +124,8 @@ public class PyramidGrey23 {
         return ((0xFF&data[index]) + (0xFF&data[index+1])) / 2;
     }
 
+    @Override
+    public String toString() {
+        return "PyramidGrey23(id=" + getID().toHex() + ", primary=" + getTopPrimary() + ")";
+    }
 }

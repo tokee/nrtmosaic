@@ -45,8 +45,8 @@ public class UUID {
     }
 
     public String toHex() {
-        return h8(first64>>>32) + h8(first64 & ~(~1L << 32)) +
-               h8(second64>>>32) + h8(second64 & ~(~1L << 32));
+        return h8(first64>>>32) + h8(first64 & ~(~1L << 31)) +
+               h8(second64>>>32) + h8(second64 & ~(~1L << 31));
     }
 
     private String h8(long value) {

@@ -58,7 +58,8 @@ public class CorpusCreator {
         pyramid.setID(id);
         for (int level = 1 ; level <= wantedLevel ; level++) {
             int edge = PyramidGrey23.getTileEdge(level);
-            BufferedImage scaled = getScaledImage(inImage, edge * 2, edge * 3);
+            BufferedImage scaled = getScaledImage(inImage, edge*2, edge*3);
+            System.out.println("level=" + level + ", avg=" + avg(scaled));
             int[] pixels = new int[edge*edge];
             byte[] greys = new byte[edge*edge];
 
@@ -72,7 +73,20 @@ public class CorpusCreator {
                 }
             }
         }
+        log.debug("Created " + pyramid);
         return pyramid;
+    }
+
+    private int avg(BufferedImage scaled) {
+        long sum = 0 ;
+        int w = scaled.getWidth();
+        int h = scaled.getHeight();
+        int[] pixels = new int[w*h];
+        scaled.getRaster().getPixels(0, 0, w, h, pixels);
+        for (int i = 0 ; i < w*h ; i++) {
+            sum += pixels[i];
+        }
+        return (int) (sum / (w * h));
     }
 
     private BufferedImage renderToFull(BufferedImage in, int level) {

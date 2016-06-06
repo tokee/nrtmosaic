@@ -63,8 +63,11 @@ public class CorpusCreatorTest {
     public void testBreakdowns() throws IOException {
         CorpusCreator cc = new CorpusCreator();
         for (String sample : SAMPLES) {
+            String expectedID = sample.replace("-", "").replace("sample_", "").replace(".jpg", "");
             PyramidGrey23 pyramid =
                     cc.breakDownImage(Thread.currentThread().getContextClassLoader().getResource(sample));
+            Assert.assertEquals("The pyramid should have the right ID for " + sample,
+                                expectedID, pyramid.getID().toHex());
         }
     }
 }
