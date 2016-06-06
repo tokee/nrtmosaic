@@ -19,56 +19,109 @@ import org.apache.commons.logging.Log;
  */
 public class PyramidGrey23 {
     private static Log log = LogFactory.getLog(PyramidGrey23.class);
-    private final long[] data;
-    private final int offset;
-    private final long maxTileLevel;
+    private final byte[] data;
+    private final int origo;
+    private final long maxTileLevel; // 1:1x1, 2:2x2, 4:4x4, 5:16x16, 6:32:32, 7:64x64, 8:128x128
 
     // Shared offsets for locating the right tiles in the data
-    private static int[] tileOffsets; // Offset is byte offset, aligned to mod 8
+    private static final int[] tileOffsets; // Offset is byte offset, aligned to mod 8
+    private static final int[] tileEdges;
     static {
         tileOffsets = new int[18]; // Theoretically infinite, but we stop at 65K*65K pixel tiles
-        tileOffsets[0] = 0;  // Level 0: ID (128 bit)
+        tileEdges = new int[18];
+        tileOffsets[0] = 0;  // Level 0: ID (128 bit / 16 bytes)
+        tileEdges[0] = 0;
+
         tileOffsets[1] = 16; // Level 1: 6*1*1
+        tileEdges[1] = 1;
         int lastSize = 1;
         for (int level = 2 ; level < tileOffsets.length-1 ; level++) {
             tileOffsets[level] = tileOffsets[level-1] + 6*lastSize*lastSize;
-            while (tileOffsets[level] % 8 != 0) { // Dumb-slow, but we only do this once
-                level++;
-            }
-            lastSize++;
+            lastSize *= 2;
+            tileEdges[level] = lastSize;
         }
     }
 
     public PyramidGrey23(int maxTileLevel) {
-        this.data = new long[tileOffsets[maxTileLevel+1]/8+1]; // TODO: Verify exact boundaries
-        this.offset = 0;
+        this.data = new byte[tileOffsets[maxTileLevel+1]];
+        this.origo = 0;
         this.maxTileLevel = maxTileLevel;
     }
 
-    public PyramidGrey23(long[] data, int offset, int maxTileLevel) {
+    public PyramidGrey23(byte[] data, int origo, int maxTileLevel) {
         this.data = data;
-        this.offset = offset;
+        this.origo = origo;
         this.maxTileLevel = maxTileLevel;
     }
 
     public void setID(UUID id) {
-        data[offset] =   id.getFirst64();
-        data[offset+1] = id.getSecond64();
+        setLong(0, id.getFirst64());
+        setLong(8, id.getSecond64());
     }
+
+    public void setLong(int offset, long value) {
+        for (int i = 0; i < 8; ++i) {
+          data[origo+offset+i] = (byte) (value >>> (8-i-1 << 3));
+        }
+    }
+    public long getLong(int offset) {
+        long value = 0;
+        for (int i = 0; i < 8; i++) {
+            value |= (long)(0xFF&data[origo+offset+i]) << (8-i-1 << 3);
+        }
+        return value;
+    }
+
 
     public UUID getID() {
-        return new UUID(data[offset], data[offset+1]);
+        return new UUID(getLong(0), getLong(8));
     }
 
-    public long[] getData() {
+    public byte[] getData() {
         return data;
+    }
+
+    public void setData(byte[] data, int level, int x, int y) {
+        final int edge = getTileEdge(level);
+        final int blockSize = edge*edge;
+        System.arraycopy(data, 0, this.data, origo+getTileOffset(level, x, y), blockSize);
     }
 
     // 1: 1x1
     // 2: 2x2
     // 3: 4x4
-    public int getTileOffset(int level) {
+    public static int getTilesOffset(int level) {
+//        if (level > maxTileLevel) {
+//            throw new IllegalArgumentException("Requested tileLevel=" + level + " with maxTileLevel=" + maxTileLevel);
+//        }
         return tileOffsets[level];
+    }
+
+    public static int getTileOffset(int level, int x, int y) {
+        final int edge = getTileEdge(level);
+        final int blockSize = edge*edge;
+        return getTilesOffset(level) + (x * blockSize) + (y * 2 * blockSize);
+    }
+
+    public static int getTileEdge(int level) {
+        return tileEdges[level];
+    }
+
+    public int getTopPrimary() { // ([0,0]+[0,1]+[1,0]+[1,1])/4
+        final int index = origo+getTilesOffset(1);
+        return ((0xFF&data[index]) + (0xFF&data[index+1]) + (0xFF&data[index+2]) + (0xFF&data[index+3])) / 4;
+    }
+    public int getTopSecondary() { // ([2,0]+[2,1])/4
+        final int index = origo+getTilesOffset(1);
+        return ((0xFF&data[index+4]) + (0xFF&data[index+5])) / 2;
+    }
+    public int getBottomPrimary() { // ([1,0]+[1,1]+[2,0]+[2,1])/4
+        final int index = origo+getTilesOffset(1);
+        return ((0xFF&data[index+2]) + (0xFF&data[index+3]) + (0xFF&data[index+4]) + (0xFF&data[index+5])) / 4;
+    }
+    public int getBottomSecondary() { // ([0,0]+[0,1])/4
+        final int index = origo+getTilesOffset(1);
+        return ((0xFF&data[index]) + (0xFF&data[index+1])) / 2;
     }
 
 }

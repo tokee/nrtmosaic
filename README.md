@@ -99,7 +99,12 @@ http://achernar/iipsrv/?IIIF=/avis-show/symlinks/5/9/2/6/5926aa0a-f1a8-4899-9ab7
 Cannot resolve?
 
 
-`curl "http://rhea:56708/aviser/sbsolr/collection1/select?fq=recordBase%3Adoms_aviser&fq=py%3A[*+TO+1915]&fl=pageUUID&wt=csv&indent=true&q=geder"`
+`curl "http://rhea:56708/aviser/sbsolr/collection1/select?fq=recordBase%3Adoms_aviser&fq=py%3A\[*+TO+1915\]&fl=pageUUID&wt=csv&indent=true&q=geder"`
+or better
+`curl "http://rhea:56708/aviser/sbsolr/collection1/select?fq=recordBase%3Adoms_aviser&q=py%3A\[*+TO+1915\]&fl=pageUUID&indent=true&rows=20&group=true&group.field=editionUUID" | grep pageUUID | sed 's/.*\(uuid[^<]*\).*/\1/'`
+sed 's/uuid://' 
+cat pages | sed 's%^\(.\)\(.\)\(.\)\(.\)\(.*\)%\1/\2/\3/\4/\1\2\3\4\5%' > paths
+for P in `cat paths`; do ID=`echo $P | grep -o '[^/]*$'` ; curl "http://achernar/iipsrv/?GAM=2.0&CNT=1.1&DeepZoom=/avis-show/symlinks/${P}.jp2_files/8/0_0" > sample_${ID}.jpg ; done
 
 pageUUID
 doms_aviser_page:uuid:4921184c-6e5d-4db5-b442-761690b32347
@@ -114,7 +119,7 @@ doms_aviser_page:uuid:fb486afa-5d5b-4d50-80e1-93bded5c40d5
 doms_aviser_page:uuid:c67642da-2246-4e5a-93f9-1e810d1a0fc7
 
 http://achernar/iipsrv/?IIIF=/avis-show/symlinks/4/9/2/1/4921184c-6e5d-4db5-b442-761690b32347.jp2/276,160,152,200/152,200/0/default.jpg
-http://achernar/iipsrv/?GAM=2.0&CNT=1.1&DeepZoom=/avis-show/symlinks/4/9/2/1/4921184c-6e5d-4db5-b442-761690b32347.jp2.dzi/9/1_1.jpg
+http://achernar/iipsrv/?GAM=2.0&CNT=1.1&DeepZoom=/avis-show/symlinks/4/9/2/1/4921184c-6e5d-4db5-b442-761690b32347.jp2_files/9/1_1.jpg
 
 Works fine!
 

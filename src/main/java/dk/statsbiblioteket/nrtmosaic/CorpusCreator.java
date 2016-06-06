@@ -18,85 +18,87 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import javax.imageio.ImageIO;
-import javax.swing.*;
 import java.awt.*;
 import java.awt.geom.AffineTransform;
 import java.awt.image.*;
 import java.io.File;
 import java.io.IOException;
+import java.net.URL;
 import java.util.Arrays;
 import java.util.List;
 
 public class CorpusCreator {
     private static Log log = LogFactory.getLog(CorpusCreator.class);
 
-    public static void main(String[] argsA) {
+    public static final String FILL_COLOR = "#CCCCCC"; // Uses as background when the input image is not large enough
+    public static final int MAX_LEVEL = 8; // 128x128
+
+    public static void main(String[] argsA) throws IOException {
         List<String> args = Arrays.asList(argsA);
         if (args.isEmpty()) {
             System.out.println("Usage: CorpusCreator imagefile*");
         }
 
-        CorpusCreator cc = new CorpusCreator()
+        CorpusCreator cc = new CorpusCreator();
         for (String arg: args) {
-            File in = new File(arg);
-            if (!in.exists()) {
-                System.err.println("FileNotFound: '" + in + "'");
-            } else {
-                cc.breakDownImage(in);
+            URL in = new File(arg).exists() ? new File(arg).toURI().toURL() : new URL(arg);
+            cc.breakDownImage(in);
+        }
+    }
+
+    public PyramidGrey23 breakDownImage(URL in) throws IOException {
+        // Write to 256x234 pixel grey image
+        BufferedImage full = renderToFull(ImageIO.read(in), MAX_LEVEL); // Also does greyscale
+        return renderPyramid(new UUID(in.toString()), full, MAX_LEVEL);
+        // TODO: Store the pyramid
+    }
+
+    private PyramidGrey23 renderPyramid(UUID id, BufferedImage inImage, int wantedLevel) throws IOException {
+        PyramidGrey23 pyramid = new PyramidGrey23(wantedLevel);
+        pyramid.setID(id);
+        for (int level = 1 ; level <= wantedLevel ; level++) {
+            int edge = PyramidGrey23.getTileEdge(level);
+            BufferedImage scaled = getScaledImage(inImage, edge * 2, edge * 3);
+            int[] pixels = new int[edge*edge];
+            byte[] greys = new byte[edge*edge];
+
+            for (int y = 0; y < 3; y++) {
+                for (int x = 0; x < 2; x++) {
+                    scaled.getRaster().getPixels(x * edge, y * edge, edge, edge, pixels);
+                    for (int i = 0; i < pixels.length; i++) {
+                        greys[i] |= (byte) pixels[i];
+                    }
+                    pyramid.setData(greys, level, x, y);
+                }
             }
         }
+        return pyramid;
     }
 
-    public void breakDownImage(File in) throws IOException {
-        BufferedImage inImage = ImageIO.read(in);
-
-        // Greyscale the image
-        BufferedImage grey = new BufferedImage(inImage.getWidth(), inImage.getHeight(), BufferedImage.TYPE_BYTE_GRAY);
-        Graphics g = grey.getGraphics();
-        g.drawImage(inImage, 0, 0, null);
+    private BufferedImage renderToFull(BufferedImage in, int level) {
+        BufferedImage full = new BufferedImage(
+                PyramidGrey23.getTileEdge(level) * 2, PyramidGrey23.getTileEdge(level) * 3, BufferedImage.TYPE_BYTE_GRAY);
+        Graphics g = full.getGraphics();
+        g.fillRect(0, 0, full.getWidth(), full.getHeight());
+        g.drawImage(in, 0, 0, null);
         g.dispose();
-        inImage = null; // Don't need original anymore
-
-        // Initially scale the image
-        double scaleFactor = 256D/grey.getWidth();
-        BufferedImage scaledImage = getScaledImage(
-                grey, (int)(grey.getWidth()*scaleFactor), (int)(grey.getHeight()*scaleFactor));
-        grey = null; // Don't need the grey anymore
-
-        int level = 8;
-        PyramidGrey23 pyramid = new PyramidGrey23(level); // 128x128
-        while (true) {
-            int tileEdge = (int) Math.pow(2, level-1);
-            int[] pixels = new int[tileEdge*tileEdge];
-            scaledImage.getRGB(0, 0, tileEdge*2, )
-        }
-
-
-        // No colors
-        ImageFilter filter = new GrayFilter(true, 50);
-        ImageProducer producer = new FilteredImageSource(inImage.getSource(), filter);
-        Image grey = Toolkit.getDefaultToolkit().createImage(producer);
-
-        // Image expected to be max 256 pixels in width
-        double scaleFactor = 256D/inImage.getWidth();
-        Image scaled256 = grey.getScaledInstance(
-                (int)(inImage.getWidth()*scaleFactor), (int)(inImage.getHeight()*scaleFactor), Image.SCALE_DEFAULT);
-        final byte[] pixels = ((DataBufferByte) scaled256.getRaster()
-            .getDataBuffer()).getData();
-
+        return full;
     }
+
+
     // http://stackoverflow.com/questions/3967731/how-to-improve-the-performance-of-g-drawimage-method-for-resizing-images
     public static BufferedImage getScaledImage(BufferedImage image, int width, int height) throws IOException {
-    int imageWidth  = image.getWidth();
-    int imageHeight = image.getHeight();
+        int imageWidth  = image.getWidth();
+        int imageHeight = image.getHeight();
+        if (width == imageWidth && height == imageHeight) {
+            return image;
+        }
 
-    double scaleX = (double)width/imageWidth;
-    double scaleY = (double)height/imageHeight;
-    AffineTransform scaleTransform = AffineTransform.getScaleInstance(scaleX, scaleY);
-    AffineTransformOp bilinearScaleOp = new AffineTransformOp(scaleTransform, AffineTransformOp.TYPE_BILINEAR);
+        double scaleX = (double)width/imageWidth;
+        double scaleY = (double)height/imageHeight;
+        AffineTransform scaleTransform = AffineTransform.getScaleInstance(scaleX, scaleY);
+        AffineTransformOp bilinearScaleOp = new AffineTransformOp(scaleTransform, AffineTransformOp.TYPE_BILINEAR);
 
-    return bilinearScaleOp.filter(
-        image,
-        new BufferedImage(width, height, image.getType()));
-}
+        return bilinearScaleOp.filter(image, new BufferedImage(width, height, image.getType()));
+    }
 }
