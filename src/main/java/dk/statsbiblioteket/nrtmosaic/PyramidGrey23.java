@@ -8,8 +8,14 @@
   */
 package dk.statsbiblioteket.nrtmosaic;
 
-import org.apache.commons.logging.LogFactory;
 import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
 /**
  * Representations of a greyscale image of aspect ration 2:3 at different zoom levels.
@@ -21,11 +27,12 @@ public class PyramidGrey23 {
     private static Log log = LogFactory.getLog(PyramidGrey23.class);
     private final byte[] data;
     private final int origo;
-    private final long maxTileLevel; // 1:1x1, 2:2x2, 4:4x4, 5:16x16, 6:32:32, 7:64x64, 8:128x128
+    private final int maxTileLevel; // 1:1x1, 2:2x2, 4:4x4, 5:16x16, 6:32:32, 7:64x64, 8:128x128
 
     // Shared offsets for locating the right tiles in the data
     private static final int[] tileOffsets; // Offset is byte offset, aligned to mod 8
     private static final int[] tileEdges;
+
     static {
         tileOffsets = new int[18]; // Theoretically infinite, but we stop at 65K*65K pixel tiles
         tileEdges = new int[18];
@@ -47,11 +54,27 @@ public class PyramidGrey23 {
         this.origo = 0;
         this.maxTileLevel = maxTileLevel;
     }
+    public PyramidGrey23  createNew() {
+        return new PyramidGrey23(maxTileLevel);
+    }
 
-    public PyramidGrey23(byte[] data, int origo, int maxTileLevel) {
+    private PyramidGrey23(byte[] data, int origo, int maxTileLevel) {
         this.data = data;
         this.origo = origo;
         this.maxTileLevel = maxTileLevel;
+    }
+
+    private PyramidGrey23(int maxTileLevel, Path dat) throws IOException {
+        this(maxTileLevel);
+        try (FileInputStream fis = new FileInputStream(dat.toFile())) {
+            int offset = 0;
+            while (offset < data.length) {
+                offset += fis.read(data, offset, data.length - offset);
+            }
+        }
+    }
+    public PyramidGrey23 createNew(Path dat) throws IOException {
+        return new PyramidGrey23(maxTileLevel, dat);
     }
 
     public void setID(UUID id) {
@@ -72,6 +95,15 @@ public class PyramidGrey23 {
         return value;
     }
 
+    public int getMaxTileLevel() {
+        return maxTileLevel;
+    }
+    public int getFractionWidth() {
+        return 2;
+    }
+    public int getFractionHeight() {
+        return 2;
+    }
 
     public UUID getID() {
         return new UUID(getLong(0), getLong(8));
@@ -90,20 +122,20 @@ public class PyramidGrey23 {
     // 1: 1x1
     // 2: 2x2
     // 3: 4x4
-    public static int getTilesOffset(int level) {
+    public int getTilesOffset(int level) {
 //        if (level > maxTileLevel) {
 //            throw new IllegalArgumentException("Requested tileLevel=" + level + " with maxTileLevel=" + maxTileLevel);
 //        }
         return tileOffsets[level];
     }
 
-    public static int getTileOffset(int level, int x, int y) {
+    public int getTileOffset(int level, int x, int y) {
         final int edge = getTileEdge(level);
         final int blockSize = edge*edge;
         return getTilesOffset(level) + (x * blockSize) + (y * 2 * blockSize);
     }
 
-    public static int getTileEdge(int level) {
+    public int getTileEdge(int level) {
         return tileEdges[level];
     }
 
@@ -127,5 +159,32 @@ public class PyramidGrey23 {
     @Override
     public String toString() {
         return "PyramidGrey23(id=" + getID().toHex() + ", primary=" + getTopPrimary() + ")";
+    }
+
+    public boolean store(Path root) throws IOException {
+        return store(root, false);
+    }
+    public boolean store(Path root, boolean overwrite) throws IOException {
+        final String hex = getID().toHex();
+
+        final Path folder = root.resolve(hex.substring(0, 2)).resolve(hex.substring(2, 4));
+        final Path full = folder.resolve(hex + ".dat");
+
+        if (Files.exists(full)) {
+            if (!overwrite) {
+                log.info("Pyramid " + hex + " was already processed. Leaving untouched");
+                return false;
+            }
+            log.info("Pyramid " + hex + " was already processed. Overwriting with new version");
+            Files.delete(full);
+        }
+        if (!Files.exists(folder)) {
+            Files.createDirectories(folder);
+        }
+        log.debug("Storing " + this + " as " + full);
+        try (FileOutputStream fos = new FileOutputStream(full.toFile())) {
+            fos.write(data);
+        }
+        return true;
     }
 }

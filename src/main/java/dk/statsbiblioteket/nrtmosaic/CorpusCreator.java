@@ -30,8 +30,10 @@ import java.util.List;
 public class CorpusCreator {
     private static Log log = LogFactory.getLog(CorpusCreator.class);
 
-    public static final String FILL_COLOR = "#CCCCCC"; // Uses as background when the input image is not large enough
+    // Used as background when the input image is not large enough
+    public static final Color FILL_COLOR = new Color(0xCC, 0xCC, 0xCC);
     public static final int MAX_LEVEL = 8; // 128x128
+    public static final PyramidGrey23 imhotep = new PyramidGrey23(MAX_LEVEL);
 
     public static void main(String[] argsA) throws IOException {
         List<String> args = Arrays.asList(argsA);
@@ -48,26 +50,44 @@ public class CorpusCreator {
 
     public PyramidGrey23 breakDownImage(URL in) throws IOException {
         // Write to 256x234 pixel grey image
-        BufferedImage full = renderToFull(ImageIO.read(in), MAX_LEVEL); // Also does greyscale
-        return renderPyramid(new UUID(in.toString()), full, MAX_LEVEL);
+        BufferedImage full = renderToFull(ImageIO.read(in), imhotep.getMaxTileLevel()); // Also does greyscale
+        return renderPyramid(new UUID(in.toString()), full);
         // TODO: Store the pyramid
     }
 
-    private PyramidGrey23 renderPyramid(UUID id, BufferedImage inImage, int wantedLevel) throws IOException {
-        PyramidGrey23 pyramid = new PyramidGrey23(wantedLevel);
+    private PyramidGrey23 renderPyramid(UUID id, BufferedImage inImage) throws IOException {
+        PyramidGrey23 pyramid = imhotep.createNew();
         pyramid.setID(id);
-        for (int level = 1 ; level <= wantedLevel ; level++) {
-            int edge = PyramidGrey23.getTileEdge(level);
+        final long baseSum[] = new long[2*3]; // We calculate the 2x3-level based on the full image
+        for (int level = imhotep.getMaxTileLevel(); level > 0 ; level--) {
+            int edge = imhotep.getTileEdge(level);
             BufferedImage scaled = getScaledImage(inImage, edge*2, edge*3);
-            System.out.println("level=" + level + ", avg=" + avg(scaled));
+//            System.out.println("level=" + level + ", avg=" + avg(scaled));
             int[] pixels = new int[edge*edge];
             byte[] greys = new byte[edge*edge];
 
             for (int y = 0; y < 3; y++) {
                 for (int x = 0; x < 2; x++) {
+                    if (level == 1) {
+                        // Level 1 is special as we use the average of the color from the upmost level
+                        // If we just scale down, the resulting pixels gets very light
+                        greys[0] = (byte) (baseSum[y*2+x] / imhotep.getTileEdge(imhotep.getMaxTileLevel()) /
+                                           imhotep.getTileEdge(imhotep.getMaxTileLevel()));
+                        pyramid.setData(greys, level, x, y);
+                        continue;
+                    }
                     scaled.getRaster().getPixels(x * edge, y * edge, edge, edge, pixels);
-                    for (int i = 0; i < pixels.length; i++) {
-                        greys[i] |= (byte) pixels[i];
+                    if (scaled == inImage) { // Top-level
+                        long sum = 0;
+                        for (int i = 0; i < pixels.length; i++) {
+                            greys[i] |= (byte) pixels[i];
+                            sum += pixels[i];
+                        }
+                        baseSum[y*2+x] = sum;
+                    } else {
+                        for (int i = 0; i < pixels.length; i++) {
+                            greys[i] |= (byte) pixels[i];
+                        }
                     }
                     pyramid.setData(greys, level, x, y);
                 }
@@ -91,8 +111,9 @@ public class CorpusCreator {
 
     private BufferedImage renderToFull(BufferedImage in, int level) {
         BufferedImage full = new BufferedImage(
-                PyramidGrey23.getTileEdge(level) * 2, PyramidGrey23.getTileEdge(level) * 3, BufferedImage.TYPE_BYTE_GRAY);
+                imhotep.getTileEdge(level) * 2, imhotep.getTileEdge(level) * 3, BufferedImage.TYPE_BYTE_GRAY);
         Graphics g = full.getGraphics();
+        g.setColor(FILL_COLOR);
         g.fillRect(0, 0, full.getWidth(), full.getHeight());
         g.drawImage(in, 0, 0, null);
         g.dispose();

@@ -3,7 +3,11 @@ package dk.statsbiblioteket.nrtmosaic;
 import junit.framework.Assert;
 import org.junit.Test;
 
+import java.io.File;
 import java.io.IOException;
+import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
 /*
  *  Licensed under the Apache License, Version 2.0 (the "License");
@@ -62,6 +66,7 @@ public class CorpusCreatorTest {
     @Test
     public void testBreakdowns() throws IOException {
         CorpusCreator cc = new CorpusCreator();
+        Path root = Files.createTempDirectory("pyramid_test");
         for (String sample : SAMPLES) {
             String expectedID = sample.replace("-", "").replace("sample_", "").replace(".jpg", "");
             PyramidGrey23 pyramid =
@@ -69,5 +74,16 @@ public class CorpusCreatorTest {
             Assert.assertEquals("The pyramid should have the right ID for " + sample,
                                 expectedID, pyramid.getID().toHex());
         }
+    }
+
+    public static Path createPyramidSample() throws IOException {
+        CorpusCreator cc = new CorpusCreator();
+        Path root = Files.createTempDirectory("pyramid_test");
+        for (String sample : SAMPLES) {
+            URL image = Thread.currentThread().getContextClassLoader().getResource(sample);
+            PyramidGrey23 pyramid = cc.breakDownImage(image);
+            pyramid.store(root);
+        }
+        return root;
     }
 }
