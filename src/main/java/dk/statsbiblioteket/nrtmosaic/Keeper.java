@@ -20,10 +20,7 @@ import org.apache.commons.logging.Log;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Stream;
 
 /**
@@ -36,14 +33,6 @@ public class Keeper {
     // TODO: This could be much more efficiently packed as just a single byte[]
     private final List<List<PyramidGrey23>> pyramidsTop = new ArrayList<>(256);
     private final List<List<PyramidGrey23>> pyramidsBottom = new ArrayList<>(256);
-
-    public int size() {
-        int size = 0;
-        for (List<PyramidGrey23> pList: pyramidsTop) {
-            size += pList.size();
-        }
-        return size;
-    }
 
     {
         for (int i = 0 ; i < 256 ; i++) {
@@ -81,6 +70,38 @@ public class Keeper {
             });
         }
     }
+
+    public int size() {
+        int size = 0;
+        for (List<PyramidGrey23> pList: pyramidsTop) {
+            size += pList.size();
+        }
+        return size;
+    }
+
+    public PyramidGrey23 getClosestTop(int primary, int secondary, Random random) {
+        List<PyramidGrey23> candidates = getClosest(pyramidsTop, primary, random);
+        return candidates.get(random.nextInt(candidates.size())); // TODO: Should prioritize secondary
+    }
+    public PyramidGrey23 getClosestBottom(int primary, int secondary, Random random) {
+        List<PyramidGrey23> candidates = getClosest(pyramidsBottom, primary, random);
+        return candidates.get(random.nextInt(candidates.size())); // TODO: Should prioritize secondary
+    }
+
+    private List<PyramidGrey23> getClosest(List<List<PyramidGrey23>> pyramids, final int ideal, Random random) {
+        int delta = -1;
+        while (delta++ < 512) { // Linear search out from origo
+            int index = ideal + (((delta & 1) == 1 ? -1 : 1) * delta/2);
+            if (index < 0 || index > 255) {
+                continue;
+            }
+            if (!pyramids.get(index).isEmpty()) {
+                return pyramids.get(index);
+            }
+        }
+        throw new IllegalStateException("Getting closest should always return a candidate list");
+    }
+
 
     private void addPyramid(Path dat) {
         PyramidGrey23 pyramid;
