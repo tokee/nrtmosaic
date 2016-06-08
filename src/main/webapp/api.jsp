@@ -1,5 +1,5 @@
 
-<h1>APINrtmosaic REST resources. </h1>
+<h1>API Nrtmosaic REST resources. </h1>
 <br>                                                       
 <h2> SERVICE METHODS: </h2>
 <br>
