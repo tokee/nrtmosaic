@@ -20,6 +20,7 @@ import org.apache.commons.logging.Log;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.*;
 import java.util.stream.Stream;
 
@@ -39,6 +40,10 @@ public class Keeper {
             pyramidsTop.add(new ArrayList<>());
             pyramidsBottom.add(new ArrayList<>());
         }
+    }
+
+    public Keeper() {
+        this(Paths.get(Config.getString("pyramid.root")), new PyramidGrey23(Config.getInt("pyramid.maxlevel")));
     }
 
     // /tmp/pyramid_test1631652512768907712/ 02/ 82/ 02823b5f223a41249913985cb5ad815f.dat

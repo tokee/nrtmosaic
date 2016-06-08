@@ -1,9 +1,9 @@
 #!/bin/sh
 
-rm  /home/teg/Desktop/apache-tomcat-8.0.23/webapps/nrtmosaic -r
+rm -r tomcat/webapps/nrtmosaic 
 mvn clean package -DskipTests
 mv target/nrtmosaic*.war target/nrtmosaic.war
-cp target/nrtmosaic.war /home/teg/Desktop/apache-tomcat-8.0.23/webapps/
+cp target/nrtmosaic.war tomcat/webapps/
 
 echo "nrtmosaic deployed to localtomcat"
 

@@ -29,16 +29,16 @@ public class NrtmosaicResource {
     @GET
     @Path("/image")
     @Produces("image/jpeg")
-    public Response getImage(@QueryParam("source") String arcFilePath, @QueryParam("x") double x, @QueryParam("y") double y, @QueryParam("z") double z)
-            throws ServiceException {
+    public Response getImage(@QueryParam("source") String arcFilePath, @QueryParam("x") double x,
+                             @QueryParam("y") double y, @QueryParam("z") double z) throws ServiceException {
         try {
     
             //Do somethign with source, x, y, z parameters and then delete renderSampleImage method
             
             BufferedImage image = renderSampleImage();
                                     
-                ResponseBuilder response = Response.ok((Object) image);
-                return response.build();            
+            ResponseBuilder response = Response.ok((Object) image);
+            return response.build();
         } catch (Exception e) {            
             throw handleServiceExceptions(e);
         }
@@ -50,14 +50,11 @@ public class NrtmosaicResource {
 
         final int size = 100;
 
-        BufferedImage img = new BufferedImage(size, size,
-                BufferedImage.TYPE_BYTE_GRAY);
+        BufferedImage img = new BufferedImage(size, size, BufferedImage.TYPE_BYTE_GRAY);
 
         Graphics2D gfx = img.createGraphics();
-        gfx.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
-                RenderingHints.VALUE_ANTIALIAS_ON);
-        gfx.setStroke(new BasicStroke(size / 40f, BasicStroke.CAP_ROUND,
-                BasicStroke.JOIN_ROUND));
+        gfx.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+        gfx.setStroke(new BasicStroke(size / 40f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
 
         gfx.setColor(Color.BLACK);
         gfx.setBackground(Color.WHITE);

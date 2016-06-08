@@ -27,9 +27,9 @@ import java.util.Random;
 public class Tile23 {
     private static Log log = LogFactory.getLog(Tile23.class);
 
-    public static final int edge = 256;
+    public static final int edge = Config.getInt("tile.edge");
 
-    private final PyramidGrey23[] map = new PyramidGrey23[edge*edge*2/3+2]; // width(edge) * height(2/3 of edge) + round
+    private final PyramidGrey23[] map = new PyramidGrey23[edge*edge]; // Optimization: 1/3 of these are always empty.
 
     public static Tile23 createTile(BufferedImage source, Keeper keeper) {
         if (source.getWidth() != edge || source.getHeight() != edge) {
@@ -43,7 +43,6 @@ public class Tile23 {
 
         int[] pixels = new int[edge*edge];
         source.getRaster().getPixels(0, 0, edge, edge, pixels);
-        int index = 0;
         for (int y = 0 ; y < edge ; y++) {
             switch (y*2%3) {
                 case 2:   // None (1, 4, 7, 10...)
@@ -52,7 +51,7 @@ public class Tile23 {
                     for (int x = 0 ; x < edge ; x++) {
                         int primary = pixels[y*edge + x];
                         int secondary = pixels[(y+1)*edge + x];
-                        tile.map[index++] = keeper.getClosestTop(primary, secondary, random);
+                        tile.map[y*edge+x] = keeper.getClosestTop(primary, secondary, random);
                     }
                     break;
                 }
@@ -60,12 +59,77 @@ public class Tile23 {
                     for (int x = 0; x < edge; x++) {
                         int primary = pixels[y * edge + x];
                         int secondary = pixels[(y - 1) * edge + x];
-                        tile.map[index++] = keeper.getClosestBottom(primary, secondary, random);
+                        tile.map[y*edge+x] = keeper.getClosestBottom(primary, secondary, random);
                     }
                 }
             }
         }
         log.debug("Mapped tile in " + (System.nanoTime()-startNS)/1000000 + "ms");
         return tile;
+    }
+
+    /**
+     * @param subTileX logical x within the tile: Level 1 has [0..0], l2 has [0..1], l3 has [0..3], l4 has [0..7].
+     * @param subTileY same principle as subTileX.
+     * @param level 2 returns image made up of pyramids scaled to 2x3 pixels.
+     * @return a mosaic that should look approximately like the source at the given z level.
+     */
+    public BufferedImage renderImage(int subTileX, int subTileY, int level, BufferedImage reuse) {
+        if (reuse == null) {
+            reuse = new BufferedImage(edge, edge, BufferedImage.TYPE_BYTE_GRAY);
+        }
+        final int[] canvas = new int[edge*edge];
+
+        // We iterate the mappings from a rectangle on the original Tile image and
+        // render the right level from the pyramids onto the canvas
+        final int shift = level-1; // z==1 -> 0 shift
+
+        final int startX = subTileX*(edge>>shift);
+        final int startY = subTileY*(edge>>shift);
+        final int zoomFactor = 1<<shift;
+        final int levelEdge = (edge>>shift);
+        for (int y = startY ; y < startY+levelEdge ; y++) {
+            for (int x = startX; y < startY + levelEdge; x++) {
+                final int canvasX = (x - startX) << shift;
+                final int canvasY = (y - startY) << shift;
+                final PyramidGrey23 pyramid = map[y * edge + x]; // Will be null for y*2%3==2
+                switch (y * 2 % 3) {
+                    case 2:   // None (1, 4, 7, 10...)
+                        continue;
+                    case 0: { // Top-down (0, 3, 6, 9...)
+                        render(pyramid, level, canvas, canvasX, canvasY);
+                        break;
+                    }
+                    case 1: { // Bottom-up (2, 5, 8, 11...)
+                        render(pyramid, level, canvas, canvasX, (2*canvasY-zoomFactor)/2);
+                        break;
+                    }
+                }
+            }
+        }
+        // TODO: Set rendered data
+        return reuse;
+    }
+
+    // Renders the 6 pyramid sub-tiles at the given position of the canvas
+    private void render(PyramidGrey23 pyramid, int level, int[] canvas, int canvasOrigoX, int canvasOrigoY) {
+        final int pTileEdge = pyramid.getTileEdge(level);
+        for (int fy = 0 ; fy < pyramid.getFractionHeight() ; fy++) {
+            for (int fx = 0; fx < pyramid.getFractionWidth(); fx++) {
+                renderSubTile(pyramid, pyramid.getTileOffset(level, fx, fy), pTileEdge, canvas,
+                       canvasOrigoX + fx * pTileEdge, canvasOrigoY + (fy * pTileEdge * edge));
+            }
+        }
+    }
+
+    // Renders a single sub-tile at the given place on the canvas
+    private void renderSubTile(PyramidGrey23 pyramid, int tileOffset, int pTileEdge, int[] canvas,
+                               int canvasOrigoX, int canvasOrigoY) {
+        final byte[] data = pyramid.getData();
+        for (int y = canvasOrigoY ; y < canvasOrigoY+pTileEdge ; y++) {
+            for (int x = canvasOrigoX ; x < canvasOrigoX+pTileEdge ; x++) {
+                canvas[y*edge+x] = data[y*edge+x] & 0xFF;
+            }
+        }
     }
 }

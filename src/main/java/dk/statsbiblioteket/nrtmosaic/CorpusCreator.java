@@ -31,8 +31,12 @@ public class CorpusCreator {
     private static Log log = LogFactory.getLog(CorpusCreator.class);
 
     // Used as background when the input image is not large enough
-    public static final Color FILL_COLOR = new Color(0xCC, 0xCC, 0xCC);
-    public static final int MAX_LEVEL = 8; // 128x128
+    public static final Color FILL_COLOR;
+    static {
+        int grey = Config.getInt("tile.fillgrey");
+        FILL_COLOR = new Color(grey, grey, grey);
+    }
+    public static final int MAX_LEVEL = Config.getInt("pyramid.maxlevel"); // 128x128
     public static final PyramidGrey23 imhotep = new PyramidGrey23(MAX_LEVEL);
 
     public static void main(String[] argsA) throws IOException {

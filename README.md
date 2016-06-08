@@ -129,3 +129,13 @@ http://www2.statsbiblioteket.dk/newspaper-stream/33fbb9c1-ed72-490c-ab53-c800cc2
 
 Sample Image server tile:
 http://achernar/iipsrv/?IIIF=/avis-show/symlinks/f/d/f/5/fdf5d350-360a-49db-ada5-2a4b5d51672b.jp2/276,1860,1852,2000/1852,2000/0/default.jpg
+
+
+### Deploy
+curl "http://ftp.download-by.net/apache/tomcat/tomcat-8/v8.0.35/bin/apache-tomcat-8.0.35.tar.gz" > apache-tomcat-8.0.35.tar.gz
+tar xzovf apache-tomcat-8.0.35.tar.gz
+ln -s apache-tomcat-8.0.35 tomcat
+tomcat/bin/startup.sh
+./deployLocalTomcat.sh
+
+http://tokemon:8080/nrtmosaic/services/image?source=foo&x=1&y=1&z=1
