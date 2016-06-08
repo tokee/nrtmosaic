@@ -16,7 +16,7 @@
         </thead>  
         <tbody>                     
             <tr>  
-            <td>services/image?source=abc&x=123&y=456&=789</td>  
+            <td>services/image?source=abc&x=123&y=456&z=789</td>  
             <td>
             Params:source,x,y,x
             </td>  
