@@ -21,7 +21,7 @@ import dk.statsbiblioteket.nrtmosaic.service.exception.InvalidArgumentServiceExc
 import dk.statsbiblioteket.nrtmosaic.service.exception.ServiceException;
 
 
-@Path("test")
+@Path("/")
 public class NrtmosaicResource {
 
     private static Log log = LogFactory.getLog(NrtmosaicResource.class);
