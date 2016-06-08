@@ -66,5 +66,6 @@ public class Tile23 {
             }
         }
         log.debug("Mapped tile in " + (System.nanoTime()-startNS)/1000000 + "ms");
+        return tile;
     }
 }
