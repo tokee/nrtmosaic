@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>dk.statsbiblioteket</groupId>
     <artifactId>nrtmosaic</artifactId>
-    <packaging>jar</packaging>
+    <packaging>war</packaging>
     <version>0.1-SNAPSHOT</version>
     <name>nrtmosaic</name>
     <url>http://maven.apache.org</url>
@@ -52,6 +52,40 @@
                     </exclusion>
                 </exclusions>
             </dependency>
+
+
+<!-- REST -->      
+   
+      <dependency>
+        <groupId>com.sun.jersey</groupId>
+        <artifactId>jersey-core</artifactId>
+        <version>1.19</version>
+      </dependency>
+
+      <dependency>
+        <groupId>com.sun.jersey</groupId>
+        <artifactId>jersey-servlet</artifactId>
+        <version>1.19</version>
+      </dependency>
+
+      <dependency>
+        <groupId>com.sun.jersey</groupId>
+        <artifactId>jersey-json</artifactId>
+        <version>1.19</version>
+      </dependency>
+
+     <dependency>
+      <groupId>com.sun.jersey</groupId>
+      <artifactId>jersey-client</artifactId>
+      <version>1.19</version>
+    </dependency>
+
+    <dependency>
+              <groupId>com.google.code.gson</groupId>
+              <artifactId>gson</artifactId>
+              <version>2.3.1</version>
+    </dependency>
+
 
         <dependency>
             <groupId>log4j</groupId>
