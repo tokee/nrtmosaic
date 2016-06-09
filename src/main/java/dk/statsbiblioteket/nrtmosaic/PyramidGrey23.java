@@ -187,4 +187,10 @@ public class PyramidGrey23 {
         }
         return true;
     }
+
+    public Path getFullPath(Path root, UUID id) {
+        String hex = id.toHex();
+        Path folder = root.resolve(hex.substring(0, 2)).resolve(hex.substring(2, 4));
+        return folder.resolve(hex + ".dat");
+    }
 }

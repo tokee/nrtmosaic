@@ -30,7 +30,8 @@ import static org.junit.Assert.*;
 public class KeeperTest {
 
     private Path lastRoot = null;
-    @Before
+
+    // Intentionally disabled
     public void setUp() {
         try {
             lastRoot = CorpusCreatorTest.createPyramidSample();
@@ -64,10 +65,11 @@ public class KeeperTest {
 
     @Test
     public void testLoad() {
-        if (lastRoot == null) {
+/*        if (lastRoot == null) {
             return;
-        }
-        Keeper keeper = new Keeper(lastRoot, CorpusCreator.imhotep);
+        }*/
+        //Keeper keeper = new Keeper(lastRoot, CorpusCreator.imhotep);
+        Keeper keeper = new Keeper();
         assertTrue("There should be some pyramids in the keeper", keeper.size() > 0);
     }
 }

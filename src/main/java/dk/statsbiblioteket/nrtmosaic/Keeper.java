@@ -43,11 +43,13 @@ public class Keeper {
     }
 
     public Keeper() {
-        this(Paths.get(Config.getString("pyramid.root")), new PyramidGrey23(Config.getInt("pyramid.maxlevel")));
+        this(Paths.get(Config.getString("pyramid.cache")), new PyramidGrey23(Config.getInt("pyramid.maxlevel")));
     }
 
     // /tmp/pyramid_test1631652512768907712/ 02/ 82/ 02823b5f223a41249913985cb5ad815f.dat
     public Keeper(Path root, PyramidGrey23 imhotep) {
+        CorpusCreator.generateCache(); // Entangled coding. Consider an overall application control class instead
+
         this.imhotep = imhotep;
         wrappedList(root).
                 filter(sub1 -> Files.isDirectory(sub1)).

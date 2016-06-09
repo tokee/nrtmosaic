@@ -48,6 +48,9 @@ public class Tile23 {
                 case 2:   // None (1, 4, 7, 10...)
                     continue;
                 case 0: { // Top-down (0, 3, 6, 9...)
+                    if (y+1>=edge) {
+                        continue; // TODO: Figure out how to handle top-bottom borders between tiles
+                    }
                     for (int x = 0 ; x < edge ; x++) {
                         int primary = pixels[y*edge + x];
                         int secondary = pixels[(y+1)*edge + x];
@@ -74,7 +77,7 @@ public class Tile23 {
      * @param level 2 returns image made up of pyramids scaled to 2x3 pixels.
      * @return a mosaic that should look approximately like the source at the given z level.
      */
-    public BufferedImage renderImage(int subTileX, int subTileY, int level, BufferedImage reuse) {
+    public BufferedImage renderImage(final int subTileX, final int subTileY, final int level, BufferedImage reuse) {
         if (reuse == null) {
             reuse = new BufferedImage(edge, edge, BufferedImage.TYPE_BYTE_GRAY);
         }
@@ -88,11 +91,14 @@ public class Tile23 {
         final int startY = subTileY*(edge>>shift);
         final int zoomFactor = 1<<shift;
         final int levelEdge = (edge>>shift);
-        for (int y = startY ; y < startY+levelEdge ; y++) {
-            for (int x = startX; y < startY + levelEdge; x++) {
+        for (int y = startY ; y < startY+levelEdge && y < edge ; y++) {
+            for (int x = startX; x < startX + levelEdge; x++) {
                 final int canvasX = (x - startX) << shift;
                 final int canvasY = (y - startY) << shift;
                 final PyramidGrey23 pyramid = map[y * edge + x]; // Will be null for y*2%3==2
+                if (pyramid == null) {
+                    continue; // Bit dangerous as we do not discover if everything is null
+                }
                 switch (y * 2 % 3) {
                     case 2:   // None (1, 4, 7, 10...)
                         continue;
@@ -107,28 +113,38 @@ public class Tile23 {
                 }
             }
         }
-        // TODO: Set rendered data
+        reuse.getRaster().setPixels(0, 0, edge, edge, canvas);
         return reuse;
     }
 
     // Renders the 6 pyramid sub-tiles at the given position of the canvas
-    private void render(PyramidGrey23 pyramid, int level, int[] canvas, int canvasOrigoX, int canvasOrigoY) {
+    private void render(PyramidGrey23 pyramid, final int level, final int[] canvas,
+                        final int canvasOrigoX, final int canvasOrigoY) {
         final int pTileEdge = pyramid.getTileEdge(level);
         for (int fy = 0 ; fy < pyramid.getFractionHeight() ; fy++) {
             for (int fx = 0; fx < pyramid.getFractionWidth(); fx++) {
                 renderSubTile(pyramid, pyramid.getTileOffset(level, fx, fy), pTileEdge, canvas,
-                       canvasOrigoX + fx * pTileEdge, canvasOrigoY + (fy * pTileEdge * edge));
+                       canvasOrigoX + fx * pTileEdge, canvasOrigoY + (fy * pTileEdge));
             }
         }
     }
 
     // Renders a single sub-tile at the given place on the canvas
-    private void renderSubTile(PyramidGrey23 pyramid, int tileOffset, int pTileEdge, int[] canvas,
-                               int canvasOrigoX, int canvasOrigoY) {
+    private void renderSubTile(PyramidGrey23 pyramid, final int tileOffset, final int pTileEdge, final int[] canvas,
+                               final int canvasOrigoX, final int canvasOrigoY) {
         final byte[] data = pyramid.getData();
-        for (int y = canvasOrigoY ; y < canvasOrigoY+pTileEdge ; y++) {
-            for (int x = canvasOrigoX ; x < canvasOrigoX+pTileEdge ; x++) {
-                canvas[y*edge+x] = data[y*edge+x] & 0xFF;
+
+        for (int pyramidY = 0 ; pyramidY < pTileEdge ; pyramidY++) {
+            for (int pyramidX = 0; pyramidX < pTileEdge; pyramidX++) {
+                final int canvasIndex = (canvasOrigoY+pyramidY)*edge + canvasOrigoX+pyramidX;
+                if (canvasIndex >= edge*edge) {
+                    continue;
+                }
+                final int pyramidIndex = tileOffset + (pyramidY*pTileEdge) + pyramidX;
+/*                if (pyramidIndex > data.length) {
+                    continue; // TODO: This should not happen!?
+                }*/
+                canvas[canvasIndex] = data[pyramidIndex];
             }
         }
     }

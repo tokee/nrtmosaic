@@ -62,6 +62,11 @@ public class CorpusCreatorTest {
         Assert.assertEquals("The pyramid should have the right ID", EXPECTED_ID, pyramid.getID().toHex());
     }
 
+    @Test
+    public void testGenerateDefault() {
+        CorpusCreator.generateCache();
+    }
+
     // Simple crash/no-crash test
     @Test
     public void testBreakdowns() throws IOException {

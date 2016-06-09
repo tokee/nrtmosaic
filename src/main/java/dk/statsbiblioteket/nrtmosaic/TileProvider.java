@@ -61,7 +61,11 @@ public class TileProvider {
                 throw new RuntimeException("Unable to resolve tile for source=" + source + ", x=" + x + ", y=" + y + ", z=" + z);
             }
         }
-        return tile.renderImage(x, y, z, null);
+        long startTime = System.nanoTime();
+        BufferedImage rendered = tile.renderImage(x, y, z, null);
+        log.debug("Rendered tile for source=" + source + ", x=" + x + ", y=" + y + ", z=" + z + " in " +
+                  (System.nanoTime()-startTime)/1000000 + "ms");
+        return rendered;
     }
 
 }

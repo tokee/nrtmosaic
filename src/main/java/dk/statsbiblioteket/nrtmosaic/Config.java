@@ -20,7 +20,8 @@ import java.util.Map;
 public class Config {
     private static final Map<String, Object> conf = new HashMap<>();
     static { // Default values
-        conf.put("pyramid.root", "pyramids");
+        conf.put("pyramid.source", "nrtmosaic/sources.dat"); // List of URLs to use as source
+        conf.put("pyramid.cache", "nrtmosaic/cache");       // Where to store the cache
         conf.put("pyramid.maxlevel", 8);
         conf.put("tile.fillgrey", 0xCC);
         conf.put("tile.edge", 256);

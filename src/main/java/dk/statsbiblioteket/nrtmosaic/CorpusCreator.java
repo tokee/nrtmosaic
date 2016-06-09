@@ -21,9 +21,12 @@ import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.geom.AffineTransform;
 import java.awt.image.*;
-import java.io.File;
-import java.io.IOException;
+import java.io.*;
+import java.net.MalformedURLException;
 import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.List;
 
@@ -52,11 +55,46 @@ public class CorpusCreator {
         }
     }
 
+    public static void generateCache() {
+        final String sString = Config.getString("pyramid.source");
+        InputStream source = Thread.currentThread().getContextClassLoader().getResourceAsStream(sString);
+        if (source == null) {
+            log.info("No source available at " + sString);
+            return;
+        }
+        int processed = 0;
+        int created = 0;
+        Path dest = Paths.get(Config.getString("pyramid.cache"));
+        try {
+            BufferedReader in = new BufferedReader(new InputStreamReader(source, "utf-8"));
+            CorpusCreator cc = new CorpusCreator();
+            String line;
+
+            while ((line = in.readLine()) != null && !line.isEmpty() && !line.startsWith("#")) {
+                processed++;
+                UUID id = new UUID(line);
+                if (Files.exists(imhotep.getFullPath(dest, id))) {
+                    log.debug("Skipping " + line + " as a pyramid already exists for it");
+                    continue;
+                }
+                PyramidGrey23 pyramid = cc.breakDownImage(Util.resolveURL(line));
+                pyramid.store(dest);
+                created++;
+            }
+        } catch (UnsupportedEncodingException e) {
+            throw new RuntimeException("utf-8 not supported");
+        } catch (IOException e) {
+            throw new RuntimeException("IOException while reading " + sString, e);
+        }
+        log.info("Created " + created + "/" + processed + " pyramids from URLs in " + sString +
+                 ", storing pyramids at " + dest);
+    }
+
     public PyramidGrey23 breakDownImage(URL in) throws IOException {
+        UUID uuid = new UUID(in.toString());
         // Write to 256x234 pixel grey image
         BufferedImage full = renderToFull(ImageIO.read(in), imhotep.getMaxTileLevel()); // Also does greyscale
-        return renderPyramid(new UUID(in.toString()), full);
-        // TODO: Store the pyramid
+        return renderPyramid(uuid, full);
     }
 
     private PyramidGrey23 renderPyramid(UUID id, BufferedImage inImage) throws IOException {
