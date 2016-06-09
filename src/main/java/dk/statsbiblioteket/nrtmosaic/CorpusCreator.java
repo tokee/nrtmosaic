@@ -22,7 +22,6 @@ import java.awt.*;
 import java.awt.geom.AffineTransform;
 import java.awt.image.*;
 import java.io.*;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -40,7 +39,6 @@ public class CorpusCreator {
         FILL_COLOR = new Color(grey, grey, grey);
     }
     public static final int MAX_LEVEL = Config.getInt("pyramid.maxlevel"); // 128x128
-    public static final PyramidGrey23 imhotep = new PyramidGrey23(MAX_LEVEL);
 
     public static void main(String[] argsA) throws IOException {
         List<String> args = Arrays.asList(argsA);
@@ -73,7 +71,7 @@ public class CorpusCreator {
             while ((line = in.readLine()) != null && !line.isEmpty() && !line.startsWith("#")) {
                 processed++;
                 UUID id = new UUID(line);
-                if (Files.exists(imhotep.getFullPath(dest, id))) {
+                if (Files.exists(Config.imhotep.getFullPath(dest, id))) {
                     log.debug("Skipping " + line + " as a pyramid already exists for it");
                     continue;
                 }
@@ -93,16 +91,16 @@ public class CorpusCreator {
     public PyramidGrey23 breakDownImage(URL in) throws IOException {
         UUID uuid = new UUID(in.toString());
         // Write to 256x234 pixel grey image
-        BufferedImage full = renderToFull(ImageIO.read(in), imhotep.getMaxTileLevel()); // Also does greyscale
+        BufferedImage full = renderToFull(ImageIO.read(in), Config.imhotep.getMaxTileLevel()); // Also does greyscale
         return renderPyramid(uuid, full);
     }
 
     private PyramidGrey23 renderPyramid(UUID id, BufferedImage inImage) throws IOException {
-        PyramidGrey23 pyramid = imhotep.createNew();
+        PyramidGrey23 pyramid = Config.imhotep.createNew();
         pyramid.setID(id);
         final long baseSum[] = new long[2*3]; // We calculate the 2x3-level based on the full image
-        for (int level = imhotep.getMaxTileLevel(); level > 0 ; level--) {
-            int edge = imhotep.getTileEdge(level);
+        for (int level = Config.imhotep.getMaxTileLevel(); level > 0 ; level--) {
+            int edge = Config.imhotep.getTileEdge(level);
             BufferedImage scaled = getScaledImage(inImage, edge*2, edge*3);
 //            System.out.println("level=" + level + ", avg=" + avg(scaled));
             int[] pixels = new int[edge*edge];
@@ -113,8 +111,8 @@ public class CorpusCreator {
                     if (level == 1) {
                         // Level 1 is special as we use the average of the color from the upmost level
                         // If we just scale down, the resulting pixels gets very light
-                        greys[0] = (byte) (baseSum[y*2+x] / imhotep.getTileEdge(imhotep.getMaxTileLevel()) /
-                                           imhotep.getTileEdge(imhotep.getMaxTileLevel()));
+                        greys[0] = (byte) (baseSum[y*2+x] / Config.imhotep.getTileEdge(Config.imhotep.getMaxTileLevel()) /
+                                           Config.imhotep.getTileEdge(Config.imhotep.getMaxTileLevel()));
                         pyramid.setData(greys, level, x, y);
                         continue;
                     }
@@ -153,7 +151,7 @@ public class CorpusCreator {
 
     private BufferedImage renderToFull(BufferedImage in, int level) {
         BufferedImage full = new BufferedImage(
-                imhotep.getTileEdge(level) * 2, imhotep.getTileEdge(level) * 3, BufferedImage.TYPE_BYTE_GRAY);
+                Config.imhotep.getTileEdge(level) * 2, Config.imhotep.getTileEdge(level) * 3, BufferedImage.TYPE_BYTE_GRAY);
         Graphics g = full.getGraphics();
         g.setColor(FILL_COLOR);
         g.fillRect(0, 0, full.getWidth(), full.getHeight());

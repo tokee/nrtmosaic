@@ -78,10 +78,16 @@ public class Tile23 {
      * @return a mosaic that should look approximately like the source at the given z level.
      */
     public BufferedImage renderImage(final int subTileX, final int subTileY, final int level, BufferedImage reuse) {
+        final int pyramidLevel = level-1;
         if (reuse == null) {
             reuse = new BufferedImage(edge, edge, BufferedImage.TYPE_BYTE_GRAY);
         }
         final int[] canvas = new int[edge*edge];
+        final int pyramidTileEdge = Config.imhotep.getTileEdge(pyramidLevel); // Will be 0 for pyramidLevel 0
+        final double sourceToCanvasFactorX =
+                pyramidLevel == 0 ? 1 : 1d*Config.imhotep.getFractionWidth()*pyramidTileEdge;
+        final double sourceToCanvasFactorY =
+                pyramidLevel == 0 ? 1 : 1d*Config.imhotep.getFractionHeight()*pyramidTileEdge;
 
         // We iterate the mappings from a rectangle on the original Tile image and
         // render the right level from the pyramids onto the canvas
@@ -90,24 +96,29 @@ public class Tile23 {
         final int startX = subTileX*(edge>>shift);
         final int startY = subTileY*(edge>>shift);
         final int zoomFactor = 1<<shift;
-        final int levelEdge = (edge>>shift);
-        for (int y = startY ; y < startY+levelEdge && y < edge ; y++) {
-            for (int x = startX; x < startX + levelEdge; x++) {
-                final int canvasX = (x - startX) << shift;
-                final int canvasY = (y - startY) << shift;
-                final PyramidGrey23 pyramid = map[y * edge + x]; // Will be null for y*2%3==2
+        final int levelEdge = edge>>shift ;
+        log.debug("Rendering source cutout (" + startX + ", " + startY + "), (" +
+                  (startX+levelEdge-1) + ", " + (startY+levelEdge-1) + ") with zoomFactor=" + zoomFactor +
+                  " and levelEdge=" + levelEdge);
+        for (int sourceY = startY ; sourceY < startY+levelEdge && sourceY < edge ; sourceY++) {
+            for (int sourceX = startX; sourceX < startX + levelEdge; sourceX++) {
+                final int canvasX = (int) (((sourceX - startX) << shift) * sourceToCanvasFactorX);
+                final int canvasY = (int) (((sourceY - startY) << shift) * sourceToCanvasFactorY);
+//                log.debug("Rendering source(" + sourceX + ", " + sourceY + ") -> canvas(" +
+//                          canvasX + ", " + canvasY + ")");
+                final PyramidGrey23 pyramid = map[sourceY * edge + sourceX]; // Will be null for y*2%3==2
                 if (pyramid == null) {
                     continue; // Bit dangerous as we do not discover if everything is null
                 }
-                switch (y * 2 % 3) {
+                switch (sourceY * 2 % 3) {
                     case 2:   // None (1, 4, 7, 10...)
                         continue;
                     case 0: { // Top-down (0, 3, 6, 9...)
-                        render(pyramid, level, canvas, canvasX, canvasY);
+                        render(pyramid, pyramidLevel, canvas, canvasX, canvasY);
                         break;
                     }
                     case 1: { // Bottom-up (2, 5, 8, 11...)
-                        render(pyramid, level, canvas, canvasX, (2*canvasY-zoomFactor)/2);
+                        render(pyramid, pyramidLevel, canvas, canvasX, canvasY-pyramidTileEdge);
                         break;
                     }
                 }
@@ -120,12 +131,29 @@ public class Tile23 {
     // Renders the 6 pyramid sub-tiles at the given position of the canvas
     private void render(PyramidGrey23 pyramid, final int level, final int[] canvas,
                         final int canvasOrigoX, final int canvasOrigoY) {
+        if (level == 0) {
+            renderZero(pyramid, canvas, canvasOrigoX, canvasOrigoY);
+            return;
+        }
         final int pTileEdge = pyramid.getTileEdge(level);
+//        log.debug("Render pyramid(edge=" + pTileEdge + ") -> canvas(" + canvasOrigoX + ", " + canvasOrigoY + ")");
         for (int fy = 0 ; fy < pyramid.getFractionHeight() ; fy++) {
             for (int fx = 0; fx < pyramid.getFractionWidth(); fx++) {
                 renderSubTile(pyramid, pyramid.getTileOffset(level, fx, fy), pTileEdge, canvas,
                        canvasOrigoX + fx * pTileEdge, canvasOrigoY + (fy * pTileEdge));
             }
+        }
+    }
+    private void renderZero(PyramidGrey23 pyramid, final int[] canvas, final int canvasOrigoX, final int canvasOrigoY) {
+        final byte[] data = pyramid.getData();
+        for (int fy = 0 ; fy < 2 ; fy++) {
+            renderSubTile(pyramid, pyramid.getTileOffset(0, 0, fy), 0, canvas, canvasOrigoX, canvasOrigoY + fy);
+            final int canvasIndex = (canvasOrigoY+fy)*edge + canvasOrigoX;
+            if (canvasIndex >= edge*edge) {
+                continue;
+            }
+            final int tileOffset = pyramid.getTileOffset(1, 0, fy); // Maybe top and bottom instead of top and middle?
+            canvas[canvasIndex] = data[tileOffset];
         }
     }
 

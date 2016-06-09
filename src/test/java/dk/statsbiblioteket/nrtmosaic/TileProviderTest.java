@@ -32,7 +32,7 @@ public class TileProviderTest {
     public void testSampleTileBasic() throws InterruptedException, IOException {
         String SAMPLE = SAMPLE_1;
         TileProvider tp = new TileProvider();
-        BufferedImage tile = tp.getTile(SAMPLE, 0, 0, 8);
+        BufferedImage tile = tp.getTile(SAMPLE, 0, 0, 1);
         show(SAMPLE, tile);
     }
 

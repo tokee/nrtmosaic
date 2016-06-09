@@ -28,6 +28,7 @@ public class Config {
         conf.put("tile.cachesize", 100);
     }
 
+    public static final PyramidGrey23 imhotep = new PyramidGrey23(CorpusCreator.MAX_LEVEL);
     public static Integer getInt(String key) {
         return (Integer) conf.get(key);
     }
