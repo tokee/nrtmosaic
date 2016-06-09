@@ -144,41 +144,13 @@ public class Tile23 {
 //        log.debug("Render pyramid(edge=" + pTileEdge + ") -> canvas(" + canvasOrigoX + ", " + canvasOrigoY + ")");
         for (int fy = 0 ; fy < pyramid.getFractionHeight() ; fy++) {
             for (int fx = 0; fx < pyramid.getFractionWidth(); fx++) {
-                renderSubTile(pyramid, pyramid.getTileOffset(level, fx, fy), pTileEdge, canvas,
-                       canvasOrigoX + fx * pTileEdge, canvasOrigoY + (fy * pTileEdge));
+                pyramid.copyPixels(level, fx, fy, canvas, canvasOrigoX, canvasOrigoY, edge);
             }
         }
     }
     private void renderZero(PyramidGrey23 pyramid, final int[] canvas, final int canvasOrigoX, final int canvasOrigoY) {
-        final byte[] data = pyramid.getData();
         for (int fy = 0 ; fy < 2 ; fy++) {
-            renderSubTile(pyramid, pyramid.getTileOffset(0, 0, fy), 0, canvas, canvasOrigoX, canvasOrigoY + fy);
-            final int canvasIndex = (canvasOrigoY+fy)*edge + canvasOrigoX;
-            if (canvasIndex >= edge*edge) {
-                continue;
-            }
-            final int tileOffset = pyramid.getTileOffset(1, 0, fy); // Maybe top and bottom instead of top and middle?
-            canvas[canvasIndex] = data[tileOffset];
-        }
-    }
-
-    // Renders a single sub-tile at the given place on the canvas
-    private void renderSubTile(PyramidGrey23 pyramid, final int tileOffset, final int pTileEdge, final int[] canvas,
-                               final int canvasOrigoX, final int canvasOrigoY) {
-        final byte[] data = pyramid.getData();
-
-        for (int pyramidY = 0 ; pyramidY < pTileEdge ; pyramidY++) {
-            for (int pyramidX = 0; pyramidX < pTileEdge; pyramidX++) {
-                final int canvasIndex = (canvasOrigoY+pyramidY)*edge + canvasOrigoX+pyramidX;
-                if (canvasIndex >= edge*edge || canvasIndex < 0) {
-                    continue;
-                }
-                final int pyramidIndex = tileOffset + (pyramidY*pTileEdge) + pyramidX;
-/*                if (pyramidIndex > data.length) {
-                    continue; // TODO: This should not happen!?
-                }*/
-                canvas[canvasIndex] = data[pyramidIndex];
-            }
+            pyramid.copyPixels(1, 0, fy, canvas, canvasOrigoX, canvasOrigoY, edge);
         }
     }
 }

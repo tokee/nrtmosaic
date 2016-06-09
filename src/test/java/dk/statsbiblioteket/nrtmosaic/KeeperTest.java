@@ -88,7 +88,7 @@ public class KeeperTest {
         JDialog dialog = new JDialog();
         dialog.setTitle("Pyramid " + pyramid.getID());
         dialog.getContentPane().setLayout(new GridLayout(1, 1));
-        dialog.getContentPane().add(new JLabel(scale(new ImageIcon(render(pyramid)), 5)));
+        dialog.getContentPane().add(new JLabel(scale(new ImageIcon(render(pyramid)), 3)));
         dialog.pack();
         dialog.setVisible(true);
         dialog.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);

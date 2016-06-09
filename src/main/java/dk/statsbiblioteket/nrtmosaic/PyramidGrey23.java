@@ -54,8 +54,11 @@ public class PyramidGrey23 {
         this.origo = 0;
         this.maxTileLevel = maxTileLevel;
     }
-    public PyramidGrey23  createNew() {
+    public PyramidGrey23 createNew() {
         return new PyramidGrey23(maxTileLevel);
+    }
+    public PyramidGrey23 createNew(UUID id) {
+        return new PyramidGrey23(maxTileLevel).setID(id);
     }
 
     private PyramidGrey23(byte[] data, int origo, int maxTileLevel) {
@@ -77,9 +80,10 @@ public class PyramidGrey23 {
         return new PyramidGrey23(maxTileLevel, dat);
     }
 
-    public void setID(UUID id) {
+    public PyramidGrey23 setID(UUID id) {
         setLong(0, id.getFirst64());
         setLong(8, id.getSecond64());
+        return this;
     }
 
     public void setLong(int offset, long value) {
@@ -109,14 +113,14 @@ public class PyramidGrey23 {
         return new UUID(getLong(0), getLong(8));
     }
 
-    public byte[] getData() {
-        return data;
-    }
+    //public byte[] getData() {
+//        return data;
+  //  }
 
-    public void setData(byte[] data, int level, int x, int y) {
+    public void setData(byte[] data, int level, int fx, int fy) {
         final int edge = getTileEdge(level);
         final int blockSize = edge*edge;
-        System.arraycopy(data, 0, this.data, origo+getTileOffset(level, x, y), blockSize);
+        System.arraycopy(data, 0, this.data, origo+getTileOffset(level, fx, fy), blockSize);
     }
 
     // 1: 1x1
@@ -129,10 +133,10 @@ public class PyramidGrey23 {
         return tileOffsets[level];
     }
 
-    public int getTileOffset(int level, int x, int y) {
+    public int getTileOffset(int level, int fx, int fy) {
         final int edge = getTileEdge(level);
         final int blockSize = edge*edge;
-        return getTilesOffset(level) + (x * blockSize) + (y * 2 * blockSize);
+        return getTilesOffset(level) + (fx * blockSize) + (fy * 2 * blockSize);
     }
 
     public int getTileEdge(int level) {
@@ -183,7 +187,7 @@ public class PyramidGrey23 {
         }
         log.debug("Storing " + this + " as " + full);
         try (FileOutputStream fos = new FileOutputStream(full.toFile())) {
-            fos.write(data);
+            fos.write(data, origo, data.length - origo);
         }
         return true;
     }
@@ -194,14 +198,30 @@ public class PyramidGrey23 {
         return folder.resolve(hex + ".dat");
     }
 
-    public void copyPixels(int level, int fx, int fy, int[] canvas, int origoX, int origoY, int canvasEdge) {
+    /**
+     * Copies the given tile to the given position on the canvas.
+     * @param level       zoom level.
+     * @param fx          fraction X, must be less than {@link #getFractionWidth()}.
+     * @param fy          fraction Y, must be less than {@link #getFractionHeight()}.
+     * @param canvas      destination canvas.
+     * @param origoX      upper left corner X.
+     * @param origoY      upper left corner Y.
+     * @param canvasWidth the width of the canvas (needed for calculating canvas y). Height is assumes to be the same.
+     */
+    public void copyPixels(int level, int fx, int fy, int[] canvas, int origoX, int origoY, int canvasWidth) {
         // TODO Special case level 0
         final int tileOffset = getTileOffset(level, fx, fy);
         final int tileEdge = getTileEdge(level);
         for (int ty = 0 ; ty < tileEdge ; ty++) {
             for (int tx = 0; tx < tileEdge; tx++) {
-                canvas[(origoY+ty)*canvasEdge + origoX+tx] = 0xFF & data[tileOffset+(ty*tileEdge)+tx];
+                if (origoX+tx < canvasWidth) {
+                    final int canvasIndex = (origoY + ty) * canvasWidth + origoX + tx;
+                    if (canvasIndex < canvas.length) { // Overflow is clipped
+                        canvas[canvasIndex] = 0xFF & data[origo + tileOffset + (ty * tileEdge) + tx];
+                    }
+                }
             }
         }
     }
+
 }

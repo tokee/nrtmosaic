@@ -102,40 +102,44 @@ public class CorpusCreator {
     }
 
     private PyramidGrey23 renderPyramid(UUID id, BufferedImage inImage) throws IOException {
-        PyramidGrey23 pyramid = Config.imhotep.createNew();
-        pyramid.setID(id);
-        final long baseSum[] = new long[2*3]; // We calculate the 2x3-level based on the full image
-        for (int level = Config.imhotep.getMaxTileLevel(); level > 0 ; level--) {
-            int edge = Config.imhotep.getTileEdge(level);
-            BufferedImage scaled = getScaledImage(inImage, edge*2, edge*3);
-//            System.out.println("level=" + level + ", avg=" + avg(scaled));
-            int[] pixels = new int[edge*edge];
-            byte[] greys = new byte[edge*edge];
+        final PyramidGrey23 pyramid = Config.imhotep.createNew(id);
+        final int fw = pyramid.getFractionWidth();
+        final int fh = pyramid.getFractionHeight();
+        final int maxLevel = Config.imhotep.getMaxTileLevel();
+        final long baseSum[] = new long[fw*fh]; // We calculate the 2x3-level based on the full image
 
-            for (int y = 0; y < 3; y++) {
-                for (int x = 0; x < 2; x++) {
+        for (int level = maxLevel; level > 0 ; level--) {
+            int edge = Config.imhotep.getTileEdge(level);
+            BufferedImage scaled = getScaledImage(inImage, edge*fw, edge*fh);
+//            System.out.println("level=" + level + ", avg=" + avg(scaled));
+            int[] sourcePixels = new int[edge*edge];
+            byte[] pData = new byte[edge*edge];
+
+            for (int fy = 0; fy < fh; fy++) {
+                for (int fx = 0; fx < fw; fx++) {
                     if (level == 1) {
                         // Level 1 is special as we use the average of the color from the upmost level
                         // If we just scale down, the resulting pixels gets very light
-                        greys[0] = (byte) (baseSum[y*2+x] / Config.imhotep.getTileEdge(Config.imhotep.getMaxTileLevel()) /
+                        pData[0] = (byte) (baseSum[fy*fh+fx] /
+                                           Config.imhotep.getTileEdge(Config.imhotep.getMaxTileLevel()) /
                                            Config.imhotep.getTileEdge(Config.imhotep.getMaxTileLevel()));
-                        pyramid.setData(greys, level, x, y);
+                        pyramid.setData(pData, level, fx, fy);
                         continue;
                     }
-                    scaled.getRaster().getPixels(x * edge, y * edge, edge, edge, pixels);
+                    scaled.getRaster().getPixels(fx * edge, fy * edge, edge, edge, sourcePixels);
                     if (scaled == inImage) { // Top-level
                         long sum = 0;
-                        for (int i = 0; i < pixels.length; i++) {
-                            greys[i] |= (byte) pixels[i];
-                            sum += pixels[i];
+                        for (int i = 0; i < sourcePixels.length; i++) {
+                            pData[i] |= (byte) sourcePixels[i];
+                            sum += sourcePixels[i];
                         }
-                        baseSum[y*2+x] = sum;
+                        baseSum[fy*2+fx] = sum;
                     } else {
-                        for (int i = 0; i < pixels.length; i++) {
-                            greys[i] |= (byte) pixels[i];
+                        for (int i = 0; i < sourcePixels.length; i++) {
+                            pData[i] |= (byte) sourcePixels[i];
                         }
                     }
-                    pyramid.setData(greys, level, x, y);
+                    pyramid.setData(pData, level, fx, fy);
                 }
             }
         }
