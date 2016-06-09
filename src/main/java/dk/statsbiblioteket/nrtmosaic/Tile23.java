@@ -85,10 +85,12 @@ public class Tile23 {
         final int[] canvas = new int[edge*edge];
         final int pyramidTileEdge = Config.imhotep.getTileEdge(pyramidLevel); // Will be 0 for pyramidLevel 0
         final double sourceToCanvasFactorX =
-                pyramidLevel == 0 ? 1 : 1d*Config.imhotep.getFractionWidth()*pyramidTileEdge;
+                pyramidLevel == 0 ? 1 : 2*pyramidTileEdge;
+                //pyramidLevel == 0 ? 1 : 1d*Config.imhotep.getFractionWidth()*pyramidTileEdge;
                 //pyramidLevel == 0 ? 1 : 1d*pyramidTileEdge;
         final double sourceToCanvasFactorY =
-                pyramidLevel == 0 ? 1 : 1d*Config.imhotep.getFractionHeight()*pyramidTileEdge;
+                pyramidLevel == 0 ? 1 : 2*pyramidTileEdge;
+                //pyramidLevel == 0 ? 1 : 1d*Config.imhotep.getFractionHeight()*pyramidTileEdge;
                 //pyramidLevel == 0 ? 1 : 1d*pyramidTileEdge;
 
         // We iterate the mappings from a rectangle on the original Tile image and
@@ -104,8 +106,9 @@ public class Tile23 {
                   " and levelEdge=" + levelEdge);
         for (int sourceY = startY ; sourceY < startY+levelEdge && sourceY < edge ; sourceY++) {
             for (int sourceX = startX; sourceX < startX + levelEdge; sourceX++) {
-                final int canvasX = (int) (((sourceX - startX) << shift) * sourceToCanvasFactorX);
-                final int canvasY = (int) (((sourceY - startY) << shift) * sourceToCanvasFactorY);
+                //final int canvasX = (int) (((sourceX - startX) << shift) * sourceToCanvasFactorX);
+                final int canvasX = (int) ((sourceX - startX) * sourceToCanvasFactorX);
+                final int canvasY = (int) ((sourceY - startY) * sourceToCanvasFactorY);
 //                log.debug("Rendering source(" + sourceX + ", " + sourceY + ") -> canvas(" +
 //                          canvasX + ", " + canvasY + ")");
                 final PyramidGrey23 pyramid = map[sourceY * edge + sourceX]; // Will be null for y*2%3==2
@@ -167,7 +170,7 @@ public class Tile23 {
         for (int pyramidY = 0 ; pyramidY < pTileEdge ; pyramidY++) {
             for (int pyramidX = 0; pyramidX < pTileEdge; pyramidX++) {
                 final int canvasIndex = (canvasOrigoY+pyramidY)*edge + canvasOrigoX+pyramidX;
-                if (canvasIndex >= edge*edge) {
+                if (canvasIndex >= edge*edge || canvasIndex < 0) {
                     continue;
                 }
                 final int pyramidIndex = tileOffset + (pyramidY*pTileEdge) + pyramidX;

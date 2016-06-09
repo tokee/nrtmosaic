@@ -67,5 +67,4 @@ public class TileProvider {
                   (System.nanoTime()-startTime)/1000000 + "ms");
         return rendered;
     }
-
 }

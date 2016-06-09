@@ -19,6 +19,7 @@ import java.util.Map;
 
 public class Config {
     private static final Map<String, Object> conf = new HashMap<>();
+
     static { // Default values
         conf.put("pyramid.source", "nrtmosaic/sources.dat"); // List of URLs to use as source
         conf.put("pyramid.cache", "nrtmosaic/cache");       // Where to store the cache

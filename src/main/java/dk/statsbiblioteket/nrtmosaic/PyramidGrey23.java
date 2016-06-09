@@ -102,7 +102,7 @@ public class PyramidGrey23 {
         return 2;
     }
     public int getFractionHeight() {
-        return 2;
+        return 3;
     }
 
     public UUID getID() {
@@ -192,5 +192,16 @@ public class PyramidGrey23 {
         String hex = id.toHex();
         Path folder = root.resolve(hex.substring(0, 2)).resolve(hex.substring(2, 4));
         return folder.resolve(hex + ".dat");
+    }
+
+    public void copyPixels(int level, int fx, int fy, int[] canvas, int origoX, int origoY, int canvasEdge) {
+        // TODO Special case level 0
+        final int tileOffset = getTileOffset(level, fx, fy);
+        final int tileEdge = getTileEdge(level);
+        for (int ty = 0 ; ty < tileEdge ; ty++) {
+            for (int tx = 0; tx < tileEdge; tx++) {
+                canvas[(origoY+ty)*canvasEdge + origoX+tx] = 0xFF & data[tileOffset+(ty*tileEdge)+tx];
+            }
+        }
     }
 }

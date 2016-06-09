@@ -31,6 +31,7 @@ import java.util.List;
 
 public class CorpusCreator {
     private static Log log = LogFactory.getLog(CorpusCreator.class);
+    private static boolean cacheGenerated = false;
 
     // Used as background when the input image is not large enough
     public static final Color FILL_COLOR;
@@ -53,7 +54,12 @@ public class CorpusCreator {
         }
     }
 
-    public static void generateCache() {
+    public static synchronized void generateCache() {
+        if (cacheGenerated) {
+            log.debug("Corpus cache already generated");
+            return;
+        }
+        cacheGenerated = true;
         final String sString = Config.getString("pyramid.source");
         InputStream source = Thread.currentThread().getContextClassLoader().getResourceAsStream(sString);
         if (source == null) {

@@ -30,7 +30,6 @@ import java.util.stream.Stream;
 public class Keeper {
     private static Log log = LogFactory.getLog(Keeper.class);
 
-    private final PyramidGrey23 imhotep;
     // TODO: This could be much more efficiently packed as just a single byte[]
     private final List<List<PyramidGrey23>> pyramidsTop = new ArrayList<>(256);
     private final List<List<PyramidGrey23>> pyramidsBottom = new ArrayList<>(256);
@@ -43,14 +42,12 @@ public class Keeper {
     }
 
     public Keeper() {
-        this(Paths.get(Config.getString("pyramid.cache")), new PyramidGrey23(Config.getInt("pyramid.maxlevel")));
+        this(Paths.get(Config.getString("pyramid.cache")));
     }
 
     // /tmp/pyramid_test1631652512768907712/ 02/ 82/ 02823b5f223a41249913985cb5ad815f.dat
-    public Keeper(Path root, PyramidGrey23 imhotep) {
+    public Keeper(Path root) {
         CorpusCreator.generateCache(); // Entangled coding. Consider an overall application control class instead
-
-        this.imhotep = imhotep;
         wrappedList(root).
                 filter(sub1 -> Files.isDirectory(sub1)).
                 forEach(sub1 -> wrappedList(sub1).
@@ -113,7 +110,7 @@ public class Keeper {
     private void addPyramid(Path dat) {
         PyramidGrey23 pyramid;
         try {
-            pyramid = imhotep.createNew(dat);
+            pyramid = Config.imhotep.createNew(dat);
             log.debug("Loaded " + pyramid);
         } catch (IOException e) {
             // TODO: Consider logging and continuing here, but catch the case where there are only errors
