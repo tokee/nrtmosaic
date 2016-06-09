@@ -104,14 +104,15 @@ public class Tile23 {
         log.debug("Rendering source cutout (" + startX + ", " + startY + "), (" +
                   (startX+levelEdge) + ", " + (startY+levelEdge) + ") with zoomFactor=" + zoomFactor +
                   " and levelEdge=" + levelEdge);
-        for (int sourceY = startY ; sourceY < startY+levelEdge && sourceY < edge ; sourceY++) {
-            for (int sourceX = startX; sourceX < startX + levelEdge; sourceX++) {
+        // startY+levelEdge+1 to avoid black rectangles at the bottom, due to non-square pyramid aspect ratio
+        for (int sourceY = startY ; sourceY < startY+levelEdge+1 && sourceY < edge ; sourceY++) {
+            for (int sourceX = startX; sourceX < startX+levelEdge; sourceX++) {
                 //final int canvasX = (int) (((sourceX - startX) << shift) * sourceToCanvasFactorX);
                 final int canvasX = (int) ((sourceX - startX) * sourceToCanvasFactorX);
                 final int canvasY = (int) ((sourceY - startY) * sourceToCanvasFactorY);
 //                log.debug("Rendering source(" + sourceX + ", " + sourceY + ") -> canvas(" +
 //                          canvasX + ", " + canvasY + ")");
-                final PyramidGrey23 pyramid = map[sourceY * edge + sourceX]; // Will be null for y*2%3==2
+                final PyramidGrey23 pyramid = map[sourceY*edge + sourceX]; // Will be null for y*2%3==2
                 if (pyramid == null) {
                     continue; // Bit dangerous as we do not discover if everything is null
                 }
