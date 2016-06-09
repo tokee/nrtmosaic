@@ -18,6 +18,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import javax.imageio.ImageIO;
+import javax.swing.*;
 import java.awt.*;
 import java.awt.geom.AffineTransform;
 import java.awt.image.*;
@@ -60,6 +61,7 @@ public class CorpusCreator {
             return;
         }
         cacheGenerated = true;
+        final boolean overwrite = Config.getBool("corpuscreator.overwrite");
         final String sString = Config.getString("pyramid.source");
         InputStream source = Thread.currentThread().getContextClassLoader().getResourceAsStream(sString);
         if (source == null) {
@@ -77,7 +79,7 @@ public class CorpusCreator {
             while ((line = in.readLine()) != null && !line.isEmpty() && !line.startsWith("#")) {
                 processed++;
                 UUID id = new UUID(line);
-                if (Files.exists(Config.imhotep.getFullPath(dest, id))) {
+                if (!overwrite && Files.exists(Config.imhotep.getFullPath(dest, id))) {
                     log.debug("Skipping " + line + " as a pyramid already exists for it");
                     continue;
                 }
@@ -114,31 +116,34 @@ public class CorpusCreator {
 //            System.out.println("level=" + level + ", avg=" + avg(scaled));
             int[] sourcePixels = new int[edge*edge];
             byte[] pData = new byte[edge*edge];
+            //show(scaled);
 
             for (int fy = 0; fy < fh; fy++) {
                 for (int fx = 0; fx < fw; fx++) {
                     if (level == 1) {
                         // Level 1 is special as we use the average of the color from the upmost level
                         // If we just scale down, the resulting pixels gets very light
-                        pData[0] = (byte) (baseSum[fy*fh+fx] /
-                                           Config.imhotep.getTileEdge(Config.imhotep.getMaxTileLevel()) /
-                                           Config.imhotep.getTileEdge(Config.imhotep.getMaxTileLevel()));
+                        pData[0] = (byte) (baseSum[fy*fw+fx] /
+                                           Config.imhotep.getTileEdge(maxLevel) /
+                                           Config.imhotep.getTileEdge(maxLevel));
                         pyramid.setData(pData, level, fx, fy);
                         continue;
                     }
                     scaled.getRaster().getPixels(fx * edge, fy * edge, edge, edge, sourcePixels);
-                    if (scaled == inImage) { // Top-level
+                    if (level == maxLevel) {
+//                        System.out.println("getPixels(fx*edge=" + fx * edge + ", fy*edge=" + fy * edge + ", edge=" + edge);
                         long sum = 0;
                         for (int i = 0; i < sourcePixels.length; i++) {
-                            pData[i] |= (byte) sourcePixels[i];
+                            pData[i] = (byte) sourcePixels[i];
                             sum += sourcePixels[i];
                         }
-                        baseSum[fy*2+fx] = sum;
+                        baseSum[fy*fw+fx] = sum;
                     } else {
                         for (int i = 0; i < sourcePixels.length; i++) {
-                            pData[i] |= (byte) sourcePixels[i];
+                            pData[i] = (byte) sourcePixels[i];
                         }
                     }
+//                    show(pData, edge);
                     pyramid.setData(pData, level, fx, fy);
                 }
             }
@@ -146,6 +151,32 @@ public class CorpusCreator {
         log.debug("Created " + pyramid);
         return pyramid;
     }
+
+    private void show(byte[] pData, int edge) { // Debug
+        BufferedImage image = new BufferedImage(edge, edge, BufferedImage.TYPE_BYTE_GRAY);
+        int[] data = new int[pData.length];
+        for (int i = 0 ; i < pData.length ; i++) {
+            data[i] = 0xFF & pData[i];
+        }
+        image.getRaster().setPixels(0, 0, edge, edge, data);
+        show(image);
+    }
+
+    private void show(BufferedImage image)  { // Debugging
+        try {
+            JDialog dialog = new JDialog();
+            dialog.setTitle("Image");
+            dialog.getContentPane().setLayout(new GridLayout(1, 1));
+            dialog.getContentPane().add(new JLabel(new ImageIcon(image)));
+            dialog.pack();
+            dialog.setVisible(true);
+            dialog.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+            Thread.sleep(3000); // TODO: Add code to wait for window close
+        } catch (Exception e) {
+            throw new RuntimeException("Just debugging", e);
+        }
+    }
+
 
     private int avg(BufferedImage scaled) {
         long sum = 0 ;
@@ -161,7 +192,9 @@ public class CorpusCreator {
 
     private BufferedImage renderToFull(BufferedImage in, int level) {
         BufferedImage full = new BufferedImage(
-                Config.imhotep.getTileEdge(level) * 2, Config.imhotep.getTileEdge(level) * 3, BufferedImage.TYPE_BYTE_GRAY);
+                Config.imhotep.getTileEdge(level) * Config.imhotep.getFractionWidth(),
+                Config.imhotep.getTileEdge(level) * Config.imhotep.getFractionHeight(),
+                BufferedImage.TYPE_BYTE_GRAY);
         Graphics g = full.getGraphics();
         g.setColor(FILL_COLOR);
         g.fillRect(0, 0, full.getWidth(), full.getHeight());

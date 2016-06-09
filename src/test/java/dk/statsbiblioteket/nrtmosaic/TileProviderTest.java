@@ -49,8 +49,8 @@ public class TileProviderTest {
         for (int level = 1 ; level <= 8 ; level++) {
             dialog.getContentPane().add(new JLabel(scale(new ImageIcon(tp.getTile(original, 0, 0, level)))));
         }
-        dialog.pack();
         dialog.setVisible(true);
+        dialog.pack();
         dialog.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         Thread.sleep(1000000); // TODO: Add code to wait for window close
     }

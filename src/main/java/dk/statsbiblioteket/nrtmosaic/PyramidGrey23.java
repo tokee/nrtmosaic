@@ -117,12 +117,6 @@ public class PyramidGrey23 {
 //        return data;
   //  }
 
-    public void setData(byte[] data, int level, int fx, int fy) {
-        final int edge = getTileEdge(level);
-        final int blockSize = edge*edge;
-        System.arraycopy(data, 0, this.data, origo+getTileOffset(level, fx, fy), blockSize);
-    }
-
     // 1: 1x1
     // 2: 2x2
     // 3: 4x4
@@ -198,6 +192,13 @@ public class PyramidGrey23 {
         return folder.resolve(hex + ".dat");
     }
 
+    public void setData(byte[] data, int level, int fx, int fy) {
+        final int edge = getTileEdge(level);
+        final int tileOffset = getTileOffset(level, fx, fy);
+        final int blockSize = edge*edge;
+        System.arraycopy(data, 0, this.data, origo+tileOffset, blockSize);
+    }
+
     /**
      * Copies the given tile to the given position on the canvas.
      * @param level       zoom level.
@@ -210,8 +211,8 @@ public class PyramidGrey23 {
      */
     public void copyPixels(int level, int fx, int fy, int[] canvas, int origoX, int origoY, int canvasWidth) {
         // TODO Special case level 0
-        final int tileOffset = getTileOffset(level, fx, fy);
         final int tileEdge = getTileEdge(level);
+        final int tileOffset = getTileOffset(level, fx, fy);
         for (int ty = 0 ; ty < tileEdge ; ty++) {
             for (int tx = 0; tx < tileEdge; tx++) {
                 if (origoX+tx < canvasWidth) {

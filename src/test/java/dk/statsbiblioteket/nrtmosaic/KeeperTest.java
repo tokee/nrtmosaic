@@ -80,7 +80,7 @@ public class KeeperTest {
 
     @Test
     public void showPyramid() throws InterruptedException {
-        PyramidGrey23 pyramid = new Keeper().getClosestBottom(87, 87, new Random());
+        PyramidGrey23 pyramid = new Keeper().getClosestBottom(250, 87, new Random());
         show(pyramid);
     }
 

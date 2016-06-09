@@ -22,9 +22,10 @@ public class Config {
 
     static { // Default values
         conf.put("pyramid.source", "nrtmosaic/sources.dat"); // List of URLs to use as source
-        conf.put("pyramid.cache", "nrtmosaic/cache");       // Where to store the cache
+        conf.put("pyramid.cache", "nrtmosaic/cache");        // Where to store the cache
+        conf.put("corpuscreator.overwrite", true);           // True if existing pyramid data should be overwritten
         conf.put("pyramid.maxlevel", 8);
-        conf.put("tile.fillgrey", 0xCC);
+        conf.put("tile.fillgrey", 0xEE);
         conf.put("tile.edge", 256);
         conf.put("tile.cachesize", 100);
     }
