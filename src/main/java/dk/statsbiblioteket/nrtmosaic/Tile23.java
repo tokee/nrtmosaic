@@ -142,15 +142,16 @@ public class Tile23 {
         }
         final int pTileEdge = pyramid.getTileEdge(level);
 //        log.debug("Render pyramid(edge=" + pTileEdge + ") -> canvas(" + canvasOrigoX + ", " + canvasOrigoY + ")");
+
         for (int fy = 0 ; fy < pyramid.getFractionHeight() ; fy++) {
             for (int fx = 0; fx < pyramid.getFractionWidth(); fx++) {
-                pyramid.copyPixels(level, fx, fy, canvas, canvasOrigoX, canvasOrigoY, edge);
+                pyramid.copyPixels(level, fx, fy, canvas, canvasOrigoX+fx*pTileEdge, canvasOrigoY+fy*pTileEdge, edge);
             }
         }
     }
     private void renderZero(PyramidGrey23 pyramid, final int[] canvas, final int canvasOrigoX, final int canvasOrigoY) {
         for (int fy = 0 ; fy < 2 ; fy++) {
-            pyramid.copyPixels(1, 0, fy, canvas, canvasOrigoX, canvasOrigoY, edge);
+            pyramid.copyPixels(1, 0, fy, canvas, canvasOrigoX, canvasOrigoY+fy, edge);
         }
     }
 }
