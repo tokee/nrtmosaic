@@ -32,16 +32,23 @@ public class TileProviderTest {
     public void testSampleTileBasic() throws InterruptedException, IOException {
         String SAMPLE = SAMPLE_1;
         TileProvider tp = new TileProvider();
-        BufferedImage tile = tp.getTile(SAMPLE, 0, 0, 1);
-        show(SAMPLE, tile);
+        BufferedImage tile = tp.getTile(SAMPLE, 0, 0, 3);
     }
 
-    private void show(String original, BufferedImage render) throws InterruptedException, IOException {
+    @Test
+    public void showSample() throws IOException, InterruptedException {
+        show(SAMPLE_1);
+    }
+
+    private void show(String original) throws InterruptedException, IOException {
+        TileProvider tp = new TileProvider();
         JDialog dialog = new JDialog();
         dialog.setTitle("Original -> Mosaic");
-        dialog.getContentPane().setLayout(new FlowLayout());
+        dialog.getContentPane().setLayout(new GridLayout(3, 3));
         dialog.getContentPane().add(new JLabel(new ImageIcon(ImageIO.read(Util.resolveURL(original)))));
-        dialog.getContentPane().add(new JLabel(new ImageIcon(render)));
+        for (int level = 1 ; level <= 8 ; level++) {
+            dialog.getContentPane().add(new JLabel(new ImageIcon(tp.getTile(original, 0, 0, level))));
+        }
         dialog.pack();
         dialog.setVisible(true);
         dialog.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);

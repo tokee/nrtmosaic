@@ -86,8 +86,10 @@ public class Tile23 {
         final int pyramidTileEdge = Config.imhotep.getTileEdge(pyramidLevel); // Will be 0 for pyramidLevel 0
         final double sourceToCanvasFactorX =
                 pyramidLevel == 0 ? 1 : 1d*Config.imhotep.getFractionWidth()*pyramidTileEdge;
+                //pyramidLevel == 0 ? 1 : 1d*pyramidTileEdge;
         final double sourceToCanvasFactorY =
                 pyramidLevel == 0 ? 1 : 1d*Config.imhotep.getFractionHeight()*pyramidTileEdge;
+                //pyramidLevel == 0 ? 1 : 1d*pyramidTileEdge;
 
         // We iterate the mappings from a rectangle on the original Tile image and
         // render the right level from the pyramids onto the canvas
@@ -98,7 +100,7 @@ public class Tile23 {
         final int zoomFactor = 1<<shift;
         final int levelEdge = edge>>shift ;
         log.debug("Rendering source cutout (" + startX + ", " + startY + "), (" +
-                  (startX+levelEdge-1) + ", " + (startY+levelEdge-1) + ") with zoomFactor=" + zoomFactor +
+                  (startX+levelEdge) + ", " + (startY+levelEdge) + ") with zoomFactor=" + zoomFactor +
                   " and levelEdge=" + levelEdge);
         for (int sourceY = startY ; sourceY < startY+levelEdge && sourceY < edge ; sourceY++) {
             for (int sourceX = startX; sourceX < startX + levelEdge; sourceX++) {
