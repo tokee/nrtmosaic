@@ -27,12 +27,17 @@ public class TileProviderTest {
     private static final String SAMPLE_1 = "256/source_9c05d958-b616-47c1-9e4f-63ec2dd9429e_13_13_13.jpg";
     private static final String SAMPLE_W = "256/white.png";
     private static final String SAMPLE_B = "256/black.png";
+    public static final int SCALE = 1;
 
     @Test
     public void testSampleTileBasic() throws InterruptedException, IOException {
+        TileProvider.getTile(SAMPLE_1, 0, 0, 2);
+    }
+
+    @Test
+    public void testSampleTileOffset() throws InterruptedException, IOException {
         String SAMPLE = SAMPLE_1;
-        TileProvider tp = new TileProvider();
-        BufferedImage tile = tp.getTile(SAMPLE, 0, 0, 2);
+        TileProvider.getTile(SAMPLE, 0, 1, 2);
     }
 
     @Test
@@ -47,7 +52,7 @@ public class TileProviderTest {
         dialog.getContentPane().setLayout(new GridLayout(3, 3));
         dialog.getContentPane().add(new JLabel(scale(new ImageIcon(ImageIO.read(Util.resolveURL(original))))));
         for (int level = 1 ; level <= 8 ; level++) {
-            dialog.getContentPane().add(new JLabel(scale(new ImageIcon(tp.getTile(original, 0, 0, level)))));
+            dialog.getContentPane().add(new JLabel(scale(new ImageIcon(TileProvider.getTile(original, 0, 0, level)))));
         }
         dialog.setVisible(true);
         dialog.pack();
@@ -57,7 +62,7 @@ public class TileProviderTest {
 
     private ImageIcon scale(ImageIcon imageIcon) {
         return new ImageIcon(imageIcon.getImage().getScaledInstance(
-                imageIcon.getIconWidth()*2, imageIcon.getIconHeight()*2, Image.SCALE_FAST));
+                imageIcon.getIconWidth()*SCALE, imageIcon.getIconHeight()*SCALE, Image.SCALE_FAST));
 
     }
 }

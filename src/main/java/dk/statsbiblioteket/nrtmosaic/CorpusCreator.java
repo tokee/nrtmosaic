@@ -63,7 +63,12 @@ public class CorpusCreator {
         cacheGenerated = true;
         final boolean overwrite = Config.getBool("corpuscreator.overwrite");
         final String sString = Config.getString("pyramid.source");
-        InputStream source = Thread.currentThread().getContextClassLoader().getResourceAsStream(sString);
+        InputStream source = null;
+        try {
+            source = Util.resolveURL(sString).openStream();
+        } catch (IOException e) {
+            throw new RuntimeException("Unable to open stream '" + sString + "'");
+        }
         if (source == null) {
             log.info("No source available at " + sString);
             return;

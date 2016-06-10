@@ -1,11 +1,12 @@
 package dk.statsbiblioteket.nrtmosaic.service;
 
-import java.awt.BasicStroke;
-import java.awt.Color;
-import java.awt.Graphics2D;
-import java.awt.RenderingHints;
+import java.awt.*;
 import java.awt.image.BufferedImage;
+import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
 
+import javax.imageio.ImageIO;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
@@ -14,6 +15,8 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.ResponseBuilder;
 
+import dk.statsbiblioteket.nrtmosaic.CorpusCreator;
+import dk.statsbiblioteket.nrtmosaic.TileProvider;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -27,9 +30,6 @@ public class NrtmosaicResource {
 
     private static Log log = LogFactory.getLog(NrtmosaicResource.class);
 
-    
-    
-    
     //"http://achernar/iipsrv/?GAM=2.0&CNT=1.1&DeepZoom=/avis-show/symlinks/${P}.jp2_files/8/0_0" 
     
             //http://achernar/iipsrv/?GAM=2.0&CNT=1.1&DeepZoom=/avis-show/symlinks/5/3/8/6/5386aa42-92bd-4ffc-b4f4-ad69b0610d00.jp2.dzi/10/2_1.jpg    
@@ -54,33 +54,47 @@ public class NrtmosaicResource {
 
     
     @GET
-    @Path("/image/test/")
+    @Path("/image/deepzoom/")
     @Produces({"image/jpeg", "text/plain"})
-    public Response getImageTest(@QueryParam("GAM") String gam, @QueryParam("CNT") String cnt,
+    public Response getImageDeepzoom(@QueryParam("GAM") String gam, @QueryParam("CNT") String cnt,
                              @QueryParam("DeepZoom") String deepZoom) throws ServiceException {
         try {
-    
-            if (deepZoom.indexOf(".dzi")<0){
-                log.info("iipsrv called with GAM="+gam +" , CNT="+cnt +" ,DeepZoom="+deepZoom);           
-                System.out.println("DZI case");
-                BufferedImage image = renderSampleImage();
+            if (!deepZoom.contains(".dzi")){
+                log.debug("Deepzoom called with GAM="+gam +" , CNT="+cnt +" ,DeepZoom="+deepZoom);
+
+                BufferedImage image = checkRedirect(deepZoom);
+                if (image == null) {
+                    image = renderSampleImage();
+                }
                                         
-                ResponseBuilder response = Response.ok((Object) image);
+                ResponseBuilder response = Response.ok(image);
                 return response.build();                                
             }else{                              
-                ResponseBuilder response = Response.ok((String) "TEST!!!", MediaType.TEXT_PLAIN);
+                ResponseBuilder response = Response.ok("TODO: Add DZI", MediaType.TEXT_PLAIN);
                 
                 return response.build();                
             }
             
-        } catch (Exception e) {            
+        } catch (Exception e) {
             throw handleServiceExceptions(e);
         }
     }
 
-    
-    
-    
+    private BufferedImage checkRedirect(String deepZoom) throws IOException {
+        if (deepZoom.contains("/13/") || deepZoom.contains("/12/") || true) {
+            return TileProvider.getTile(deepZoom, 0, 0, 1);
+        }
+        // TODO: Add check for zoom level
+        return ImageIO.read(new URL(toExternalURL(deepZoom)));
+    }
+
+    private String toExternalURL(String deepZoom) {
+        String url = "http://achernar/iipsrv/?GAM=2.0&CNT=1.1&DeepZoom=" + deepZoom;
+        log.debug("Redirecting to " + url);
+        return url;
+    }
+
+
     @GET
     @Path("/image")
     @Produces("image/jpeg")

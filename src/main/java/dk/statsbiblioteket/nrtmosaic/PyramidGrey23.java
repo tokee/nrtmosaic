@@ -217,8 +217,10 @@ public class PyramidGrey23 {
             for (int tx = 0; tx < tileEdge; tx++) {
                 if (origoX+tx < canvasWidth) {
                     final int canvasIndex = (origoY + ty) * canvasWidth + origoX + tx;
-                    if (canvasIndex < canvas.length) { // Overflow is clipped
-                        canvas[canvasIndex] = 0xFF & data[origo + tileOffset + (ty * tileEdge) + tx];
+                    final int dataIndex = origo + tileOffset + (ty * tileEdge) + tx;
+                    // Overflow is clipped
+                    if (canvasIndex < canvas.length && canvasIndex >= 0 && dataIndex < data.length && dataIndex >= 0) {
+                        canvas[canvasIndex] = 0xFF & data[dataIndex];
                     }
                 }
             }

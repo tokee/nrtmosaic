@@ -21,8 +21,10 @@ public class Config {
     private static final Map<String, Object> conf = new HashMap<>();
 
     static { // Default values
-        conf.put("pyramid.source", "nrtmosaic/sources.dat"); // List of URLs to use as source
-        conf.put("pyramid.cache", "nrtmosaic/cache");        // Where to store the cache
+//        conf.put("pyramid.source", "nrtmosaic/sources.dat"); // List of URLs to use as source
+//        conf.put("pyramid.cache", "nrtmosaic/cache");        // Where to store the cache
+        conf.put("pyramid.source", "/home/te/tmp/nrtmosaic/sources.dat"); // List of URLs to use as source
+        conf.put("pyramid.cache", "/home/te/tmp/nrtmosaic/cache");        // Where to store the cache
         conf.put("corpuscreator.overwrite", false);           // True if existing pyramid data should be overwritten
         conf.put("pyramid.maxlevel", 8);
         conf.put("tile.fillgrey", 0xEE);

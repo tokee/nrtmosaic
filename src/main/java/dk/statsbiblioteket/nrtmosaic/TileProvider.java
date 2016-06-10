@@ -41,7 +41,8 @@ public class TileProvider {
      * @param z 2 returns image made up of pyramids scaled to 2x3 pixels.
      * @return a mosaic that should look approximately like the source at the given z level.
      */
-    public BufferedImage getTile(String source, int x, int y, int z) {
+    public static BufferedImage getTile(String source, int x, int y, int z) {
+        CorpusCreator.generateCache();
         Tile23 tile = tileCache.get(source);
         if (tile == null) {
             URL imageURL = Thread.currentThread().getContextClassLoader().getResource(source);
