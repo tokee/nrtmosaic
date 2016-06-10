@@ -82,7 +82,7 @@ public class NrtmosaicResource {
 
     private static final Pattern DEEPZOOM = Pattern.compile("(.*)/([0-9]+)/([0-9]+)_([0-9]+)(.*)");
     public BufferedImage checkRedirect(String gam, String cnt, String deepZoom) throws IOException {
-        final int CUTOFF = 11;
+        final int CUTOFF = 13;
 
         // /avis-show/symlinks/9/c/0/5/9c05d958-b616-47c1-9e4f-63ec2dd9429e.jp2_files/0/0_0.jpg
         Matcher deepMatch = DEEPZOOM.matcher(deepZoom);
