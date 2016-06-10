@@ -49,9 +49,9 @@ public class TileProviderTest {
         TileProvider tp = new TileProvider();
         JDialog dialog = new JDialog();
         dialog.setTitle("Original -> Mosaic");
-        dialog.getContentPane().setLayout(new GridLayout(3, 3));
+        dialog.getContentPane().setLayout(new GridLayout(2, 5));
         dialog.getContentPane().add(new JLabel(scale(new ImageIcon(ImageIO.read(Util.resolveURL(original))))));
-        for (int level = 1 ; level <= 8 ; level++) {
+        for (int level = 1 ; level <= 9 ; level++) {
             dialog.getContentPane().add(new JLabel(scale(new ImageIcon(TileProvider.getTile(original, 0, 0, level)))));
         }
         dialog.setVisible(true);
