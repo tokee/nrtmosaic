@@ -101,9 +101,9 @@ public class Tile23 {
         final int startY = subTileY*(edge>>shift);
         final int zoomFactor = 1<<shift;
         final int levelEdge = edge>>shift ;
-        log.debug("Rendering source cutout (" + startX + ", " + startY + "), (" +
-                  (startX+levelEdge) + ", " + (startY+levelEdge) + ") with zoomFactor=" + zoomFactor +
-                  " and levelEdge=" + levelEdge);
+//        log.debug("Rendering source cutout (" + startX + ", " + startY + "), (" +
+//                  (startX+levelEdge) + ", " + (startY+levelEdge) + ") with zoomFactor=" + zoomFactor +
+//                  " and levelEdge=" + levelEdge);
         // startY+levelEdge+1 to avoid black rectangles at the bottom, due to non-square pyramid aspect ratio
         for (int sourceY = startY ; sourceY < startY+levelEdge+1 && sourceY < edge ; sourceY++) {
             for (int sourceX = startX; sourceX < startX+levelEdge; sourceX++) {

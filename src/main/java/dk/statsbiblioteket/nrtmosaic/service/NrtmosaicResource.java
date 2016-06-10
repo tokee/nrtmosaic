@@ -3,7 +3,6 @@ package dk.statsbiblioteket.nrtmosaic.service;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -17,7 +16,6 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.ResponseBuilder;
 
-import dk.statsbiblioteket.nrtmosaic.CorpusCreator;
 import dk.statsbiblioteket.nrtmosaic.TileProvider;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -62,7 +60,7 @@ public class NrtmosaicResource {
                              @QueryParam("DeepZoom") String deepZoom) throws ServiceException {
         try {
             if (!deepZoom.contains(".dzi")){
-                log.debug("Deepzoom called with GAM="+gam +" , CNT="+cnt +" ,DeepZoom="+deepZoom);
+//                log.debug("Deepzoom called with GAM="+gam +" , CNT="+cnt +" ,DeepZoom="+deepZoom);
 
                 BufferedImage image = checkRedirect(gam, cnt, deepZoom);
                 if (image == null) {
@@ -98,7 +96,7 @@ public class NrtmosaicResource {
         final String post = deepMatch.group(5);
 
         if (level > CUTOFF) {
-            log.debug("Creating mosaic tile for " + deepZoom);
+            log.trace("Creating mosaic tile for " + deepZoom);
             final int zoomFactor = (int) Math.pow(2, level - CUTOFF);
             final int sourceFX = fx/zoomFactor;
             final int sourceFY = fy/zoomFactor;
@@ -114,7 +112,7 @@ public class NrtmosaicResource {
 
     private String toExternalURL(String gam, String cnt, String deepZoom) {
         String url = "http://achernar/iipsrv/?GAM=" + gam + "&CNT=" + cnt + "&DeepZoom=" + deepZoom;
-        log.debug("Redirecting to " + url);
+        log.trace("Redirecting to " + url);
         return url;
     }
 
