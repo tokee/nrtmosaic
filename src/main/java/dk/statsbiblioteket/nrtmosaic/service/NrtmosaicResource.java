@@ -82,7 +82,8 @@ public class NrtmosaicResource {
 
     private BufferedImage checkRedirect(String deepZoom) throws IOException {
         if (deepZoom.contains("/13/") || deepZoom.contains("/12/") || true) {
-            return TileProvider.getTile(deepZoom, 0, 0, 1);
+            log.debug("Creating mosaic tile for " + deepZoom);
+            return TileProvider.getTile("/home/te/tmp/nrtmosaic/256/source_9c05d958-b616-47c1-9e4f-63ec2dd9429e_13_13_13.jpg", 0, 0, 1);
         }
         // TODO: Add check for zoom level
         return ImageIO.read(new URL(toExternalURL(deepZoom)));
@@ -144,6 +145,7 @@ public class NrtmosaicResource {
     }
 
     private ServiceException handleServiceExceptions(Exception e) {
+        log.warn("ServiceException", e);
         if (e instanceof ServiceException) {
             log.info("Handling serviceException:" + e.getMessage());
             return (ServiceException) e; // Do nothing, exception already correct

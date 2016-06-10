@@ -45,7 +45,7 @@ public class TileProvider {
         CorpusCreator.generateCache();
         Tile23 tile = tileCache.get(source);
         if (tile == null) {
-            URL imageURL = Thread.currentThread().getContextClassLoader().getResource(source);
+            URL imageURL = Util.resolveURL(source);
             if (imageURL == null) {
                 throw new IllegalArgumentException("Unable to load image from '" + source + "'");
             }
