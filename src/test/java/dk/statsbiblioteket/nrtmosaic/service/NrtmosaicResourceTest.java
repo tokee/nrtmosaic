@@ -1,7 +1,11 @@
 package dk.statsbiblioteket.nrtmosaic.service;
 
+import dk.statsbiblioteket.nrtmosaic.Util;
 import dk.statsbiblioteket.nrtmosaic.service.exception.ServiceException;
 import org.junit.Test;
+
+import java.awt.image.BufferedImage;
+import java.io.IOException;
 
 
 /*
@@ -26,4 +30,14 @@ public class NrtmosaicResourceTest {
         resource.getImageDeepzoom(
                 "2", "3", "/avis-show/symlinks/9/c/0/5/9c05d958-b616-47c1-9e4f-63ec2dd9429e.jp2_files/9/1_1.jpg");
     }
+
+    @Test
+    public void testExternalRender() throws ServiceException, IOException {
+        NrtmosaicResource resource = new NrtmosaicResource();
+        BufferedImage image = resource.checkRedirect(
+                "2", "3", "/avis-show/symlinks/9/c/0/5/9c05d958-b616-47c1-9e4f-63ec2dd9429e.jp2_files/12/3_4.jpg");
+        Util.show(image);
+    }
+
+
 }

@@ -5,6 +5,8 @@ import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import javax.imageio.ImageIO;
 import javax.ws.rs.GET;
@@ -62,7 +64,7 @@ public class NrtmosaicResource {
             if (!deepZoom.contains(".dzi")){
                 log.debug("Deepzoom called with GAM="+gam +" , CNT="+cnt +" ,DeepZoom="+deepZoom);
 
-                BufferedImage image = checkRedirect(deepZoom);
+                BufferedImage image = checkRedirect(gam, cnt, deepZoom);
                 if (image == null) {
                     image = renderSampleImage();
                 }
@@ -80,17 +82,36 @@ public class NrtmosaicResource {
         }
     }
 
-    private BufferedImage checkRedirect(String deepZoom) throws IOException {
-        if (deepZoom.contains("/13/") || deepZoom.contains("/12/") || true) {
+    private static final Pattern DEEPZOOM = Pattern.compile("(.*)/([0-9]+)/([0-9]+)_([0-9]+)(.*)");
+    public BufferedImage checkRedirect(String gam, String cnt, String deepZoom) throws IOException {
+        // /avis-show/symlinks/9/c/0/5/9c05d958-b616-47c1-9e4f-63ec2dd9429e.jp2_files/0/0_0.jpg
+        Matcher deepMatch = DEEPZOOM.matcher(deepZoom);
+        if (!deepMatch.matches()) {
+            throw new IllegalAccessError("The deepzoom request '" + deepZoom + "' could not be parsed");
+        }
+        final String pre = deepMatch.group(1);
+        final int level = Integer.parseInt(deepMatch.group(2));
+        final int fx = Integer.parseInt(deepMatch.group(3));
+        final int fy = Integer.parseInt(deepMatch.group(4));
+        final String post = deepMatch.group(5);
+
+        if (level > 11) {
             log.debug("Creating mosaic tile for " + deepZoom);
-            return TileProvider.getTile("/home/te/tmp/nrtmosaic/256/source_9c05d958-b616-47c1-9e4f-63ec2dd9429e_13_13_13.jpg", 0, 0, 1);
+            final int zoomFactor = (int) Math.pow(2, level - 11);
+            final int sfx = fx/zoomFactor;
+            final int sfy = fy/zoomFactor;
+            final int origoFX = sfx*zoomFactor;
+            final int origoFY = sfy*zoomFactor;
+            String external = toExternalURL(gam, cnt, pre + "/" + 11 + "/" + sfx + "_" + sfy + post);
+            return TileProvider.getTile(external, fx-origoFX, fy-origoFY, zoomFactor);
+//            return TileProvider.getTile("/home/te/tmp/nrtmosaic/256/source_9c05d958-b616-47c1-9e4f-63ec2dd9429e_13_13_13.jpg", 0, 0, 1);
         }
         // TODO: Add check for zoom level
-        return ImageIO.read(new URL(toExternalURL(deepZoom)));
+        return ImageIO.read(new URL(toExternalURL(gam, cnt, deepZoom)));
     }
 
-    private String toExternalURL(String deepZoom) {
-        String url = "http://achernar/iipsrv/?GAM=2.0&CNT=1.1&DeepZoom=" + deepZoom;
+    private String toExternalURL(String gam, String cnt, String deepZoom) {
+        String url = "http://achernar/iipsrv/?GAM=" + gam + "&CNT=" + cnt + "&DeepZoom=" + deepZoom;
         log.debug("Redirecting to " + url);
         return url;
     }

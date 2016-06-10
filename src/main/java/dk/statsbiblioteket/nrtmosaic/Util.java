@@ -17,6 +17,9 @@ package dk.statsbiblioteket.nrtmosaic;
 import org.apache.commons.logging.LogFactory;
 import org.apache.commons.logging.Log;
 
+import javax.swing.*;
+import java.awt.*;
+import java.awt.image.BufferedImage;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.file.Files;
@@ -49,4 +52,18 @@ public class Util {
         }
     }
 
+    public static void show(BufferedImage image)  { // Debugging
+        try {
+            JDialog dialog = new JDialog();
+            dialog.setTitle("Image");
+            dialog.getContentPane().setLayout(new GridLayout(1, 1));
+            dialog.getContentPane().add(new JLabel(new ImageIcon(image)));
+            dialog.pack();
+            dialog.setVisible(true);
+            dialog.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+            Thread.sleep(3000); // TODO: Add code to wait for window close
+        } catch (Exception e) {
+            throw new RuntimeException("Just debugging", e);
+        }
+    }
 }

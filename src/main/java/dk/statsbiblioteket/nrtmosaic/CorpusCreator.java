@@ -164,22 +164,7 @@ public class CorpusCreator {
             data[i] = 0xFF & pData[i];
         }
         image.getRaster().setPixels(0, 0, edge, edge, data);
-        show(image);
-    }
-
-    private void show(BufferedImage image)  { // Debugging
-        try {
-            JDialog dialog = new JDialog();
-            dialog.setTitle("Image");
-            dialog.getContentPane().setLayout(new GridLayout(1, 1));
-            dialog.getContentPane().add(new JLabel(new ImageIcon(image)));
-            dialog.pack();
-            dialog.setVisible(true);
-            dialog.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-            Thread.sleep(3000); // TODO: Add code to wait for window close
-        } catch (Exception e) {
-            throw new RuntimeException("Just debugging", e);
-        }
+        Util.show(image);
     }
 
 
