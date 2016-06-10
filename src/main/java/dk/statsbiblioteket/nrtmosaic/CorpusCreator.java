@@ -77,18 +77,28 @@ public class CorpusCreator {
         int created = 0;
         Path dest = Paths.get(Config.getString("pyramid.cache"));
         try {
+            log.debug("Retrieving raw corpus images from " + sString);
             BufferedReader in = new BufferedReader(new InputStreamReader(source, "utf-8"));
             CorpusCreator cc = new CorpusCreator();
             String line;
 
-            while ((line = in.readLine()) != null && !line.isEmpty() && !line.startsWith("#")) {
+            while ((line = in.readLine()) != null) {
+                if (line.isEmpty() || line.startsWith("#")) {
+                    continue;
+                }
                 processed++;
                 UUID id = new UUID(line);
                 if (!overwrite && Files.exists(Config.imhotep.getFullPath(dest, id))) {
                     log.debug("Skipping " + line + " as a pyramid already exists for it");
                     continue;
                 }
-                PyramidGrey23 pyramid = cc.breakDownImage(Util.resolveURL(line));
+                PyramidGrey23 pyramid;
+                try {
+                    pyramid = cc.breakDownImage(Util.resolveURL(line));
+                } catch (Exception e) {
+                    log.warn("Unable to create pyramid for " + line + ": " + e.getMessage());
+                    continue;
+                }
                 pyramid.store(dest);
                 created++;
             }

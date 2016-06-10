@@ -4,8 +4,10 @@ import dk.statsbiblioteket.nrtmosaic.Util;
 import dk.statsbiblioteket.nrtmosaic.service.exception.ServiceException;
 import org.junit.Test;
 
+import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
+import java.net.URL;
 
 
 /*
@@ -33,10 +35,14 @@ public class NrtmosaicResourceTest {
 
     @Test
     public void testExternalRender() throws ServiceException, IOException {
+        String TILE = "/avis-show/symlinks/9/c/0/5/9c05d958-b616-47c1-9e4f-63ec2dd9429e.jp2_files/13/3_4.jpg";
+        //String TILE = "/avis-show/symlinks/9/c/0/5/9c05d958-b616-47c1-9e4f-63ec2dd9429e.jp2_files/12/3_4.jpg";
+        String external = "http://achernar/iipsrv/?DeepZoom=" + TILE;
+
         NrtmosaicResource resource = new NrtmosaicResource();
-        BufferedImage image = resource.checkRedirect(
-                "2", "3", "/avis-show/symlinks/9/c/0/5/9c05d958-b616-47c1-9e4f-63ec2dd9429e.jp2_files/12/3_4.jpg");
-        Util.show(image);
+        BufferedImage source = ImageIO.read(new URL(external));
+        BufferedImage render = resource.checkRedirect("2", "3", TILE);
+        Util.show(source, render);
     }
 
 

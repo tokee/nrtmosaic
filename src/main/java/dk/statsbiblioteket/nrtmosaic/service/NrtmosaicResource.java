@@ -84,6 +84,8 @@ public class NrtmosaicResource {
 
     private static final Pattern DEEPZOOM = Pattern.compile("(.*)/([0-9]+)/([0-9]+)_([0-9]+)(.*)");
     public BufferedImage checkRedirect(String gam, String cnt, String deepZoom) throws IOException {
+        final int CUTOFF = 11;
+
         // /avis-show/symlinks/9/c/0/5/9c05d958-b616-47c1-9e4f-63ec2dd9429e.jp2_files/0/0_0.jpg
         Matcher deepMatch = DEEPZOOM.matcher(deepZoom);
         if (!deepMatch.matches()) {
@@ -95,15 +97,15 @@ public class NrtmosaicResource {
         final int fy = Integer.parseInt(deepMatch.group(4));
         final String post = deepMatch.group(5);
 
-        if (level > 11) {
+        if (level > CUTOFF) {
             log.debug("Creating mosaic tile for " + deepZoom);
-            final int zoomFactor = (int) Math.pow(2, level - 11);
-            final int sfx = fx/zoomFactor;
-            final int sfy = fy/zoomFactor;
-            final int origoFX = sfx*zoomFactor;
-            final int origoFY = sfy*zoomFactor;
-            String external = toExternalURL(gam, cnt, pre + "/" + 11 + "/" + sfx + "_" + sfy + post);
-            return TileProvider.getTile(external, fx-origoFX, fy-origoFY, zoomFactor);
+            final int zoomFactor = (int) Math.pow(2, level - CUTOFF);
+            final int sourceFX = fx/zoomFactor;
+            final int sourceFY = fy/zoomFactor;
+            final int origoFX = sourceFX*zoomFactor;
+            final int origoFY = sourceFY*zoomFactor;
+            String external = toExternalURL(gam, cnt, pre + "/" + CUTOFF + "/" + sourceFX + "_" + sourceFY + post);
+            return TileProvider.getTile(external, fx-origoFX, fy-origoFY, level-CUTOFF+1);
 //            return TileProvider.getTile("/home/te/tmp/nrtmosaic/256/source_9c05d958-b616-47c1-9e4f-63ec2dd9429e_13_13_13.jpg", 0, 0, 1);
         }
         // TODO: Add check for zoom level

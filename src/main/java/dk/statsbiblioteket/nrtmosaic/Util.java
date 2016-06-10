@@ -52,16 +52,18 @@ public class Util {
         }
     }
 
-    public static void show(BufferedImage image)  { // Debugging
+    public static void show(BufferedImage... images)  { // Debugging
         try {
             JDialog dialog = new JDialog();
             dialog.setTitle("Image");
-            dialog.getContentPane().setLayout(new GridLayout(1, 1));
-            dialog.getContentPane().add(new JLabel(new ImageIcon(image)));
+            dialog.getContentPane().setLayout(new GridLayout(1, images.length));
+            for (BufferedImage image: images) {
+                dialog.getContentPane().add(new JLabel(new ImageIcon(image)));
+            }
             dialog.pack();
             dialog.setVisible(true);
             dialog.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-            Thread.sleep(3000); // TODO: Add code to wait for window close
+            Thread.sleep(30000); // TODO: Add code to wait for window close
         } catch (Exception e) {
             throw new RuntimeException("Just debugging", e);
         }
