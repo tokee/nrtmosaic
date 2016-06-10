@@ -26,6 +26,33 @@ public class NrtmosaicResource {
 
     private static Log log = LogFactory.getLog(NrtmosaicResource.class);
 
+    
+    
+    
+    //"http://achernar/iipsrv/?GAM=2.0&CNT=1.1&DeepZoom=/avis-show/symlinks/${P}.jp2_files/8/0_0" 
+    
+            //http://achernar/iipsrv/?GAM=2.0&CNT=1.1&DeepZoom=/avis-show/symlinks/5/3/8/6/5386aa42-92bd-4ffc-b4f4-ad69b0610d00.jp2.dzi/10/2_1.jpg    
+           //DeepZoom=/avis-show/symlinks/${P}.jp2_files/8/0_0
+    @GET
+    @Path("/image/iipsrv/")
+    @Produces("image/jpeg")
+    public Response getImage(@QueryParam("GAM") String gam, @QueryParam("CNT") String cnt,
+                             @QueryParam("DeepZoom") String deepZoom) throws ServiceException {
+        try {
+    
+            //Do something with gam, cnt deepZoom
+            log.info("iipsrv called with GAM="+gam +" , CNT="+cnt +" ,DeepZoom="+deepZoom);           
+            BufferedImage image = renderSampleImage();
+                                    
+            ResponseBuilder response = Response.ok((Object) image);
+            return response.build();
+        } catch (Exception e) {            
+            throw handleServiceExceptions(e);
+        }
+    }
+
+    
+    
     @GET
     @Path("/image")
     @Produces("image/jpeg")
