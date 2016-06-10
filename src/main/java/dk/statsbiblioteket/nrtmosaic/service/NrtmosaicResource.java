@@ -10,6 +10,7 @@ import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.ResponseBuilder;
 
@@ -51,6 +52,33 @@ public class NrtmosaicResource {
         }
     }
 
+    
+    @GET
+    @Path("/image/test/")
+    @Produces({"image/jpeg", "text/plain"})
+    public Response getImageTest(@QueryParam("GAM") String gam, @QueryParam("CNT") String cnt,
+                             @QueryParam("DeepZoom") String deepZoom) throws ServiceException {
+        try {
+    
+            if (deepZoom.indexOf(".dzi")<0){
+                log.info("iipsrv called with GAM="+gam +" , CNT="+cnt +" ,DeepZoom="+deepZoom);           
+                System.out.println("DZI case");
+                BufferedImage image = renderSampleImage();
+                                        
+                ResponseBuilder response = Response.ok((Object) image);
+                return response.build();                                
+            }else{                              
+                ResponseBuilder response = Response.ok((String) "TEST!!!", MediaType.TEXT_PLAIN);
+                
+                return response.build();                
+            }
+            
+        } catch (Exception e) {            
+            throw handleServiceExceptions(e);
+        }
+    }
+
+    
     
     
     @GET
