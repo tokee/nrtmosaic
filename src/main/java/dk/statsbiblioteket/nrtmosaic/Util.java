@@ -19,7 +19,10 @@ import org.apache.commons.logging.Log;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.geom.AffineTransform;
+import java.awt.image.AffineTransformOp;
 import java.awt.image.BufferedImage;
+import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.file.Files;
@@ -28,6 +31,26 @@ import java.nio.file.Paths;
 
 public class Util {
     private static Log log = LogFactory.getLog(Util.class);
+
+    // Used as background when the input image is not large enough
+    public static final Color FILL_COLOR;
+
+    public static int getAverageGrey(BufferedImage scaled) {
+        long sum = 0 ;
+        int w = scaled.getWidth();
+        int h = scaled.getHeight();
+        int[] pixels = new int[w*h];
+        scaled.getRaster().getPixels(0, 0, w, h, pixels);
+        for (int i = 0 ; i < w*h ; i++) {
+            sum += pixels[i];
+        }
+        return (int) (sum / (w * h));
+    }
+
+    static {
+        int grey = Config.getInt("tile.fillgrey");
+        FILL_COLOR = new Color(grey, grey, grey);
+    }
 
     // Tries local file, classloader and URL in that order
     public static URL resolveURL(String resource) {
@@ -52,6 +75,17 @@ public class Util {
         }
     }
 
+    public static void show(byte[] pData, int edge) { // Debug
+        BufferedImage image = new BufferedImage(edge, edge, BufferedImage.TYPE_BYTE_GRAY);
+        int[] data = new int[pData.length];
+        for (int i = 0 ; i < pData.length ; i++) {
+            data[i] = 0xFF & pData[i];
+        }
+        image.getRaster().setPixels(0, 0, edge, edge, data);
+        show(image);
+    }
+
+
     public static void show(BufferedImage... images)  { // Debugging
         try {
             JDialog dialog = new JDialog();
@@ -67,5 +101,31 @@ public class Util {
         } catch (Exception e) {
             throw new RuntimeException("Just debugging", e);
         }
+    }
+
+    public static BufferedImage pad(BufferedImage image, int width, int height) {
+        BufferedImage full = new BufferedImage(width, height, BufferedImage.TYPE_BYTE_GRAY);
+        Graphics g = full.getGraphics();
+        g.setColor(FILL_COLOR);
+        g.fillRect(0, 0, full.getWidth(), full.getHeight());
+        g.drawImage(image, 0, 0, null);
+        g.dispose();
+        return full;
+    }
+
+    // http://stackoverflow.com/questions/3967731/how-to-improve-the-performance-of-g-drawimage-method-for-resizing-images
+    public static BufferedImage scale(BufferedImage image, int width, int height) throws IOException {
+        int imageWidth  = image.getWidth();
+        int imageHeight = image.getHeight();
+        if (width == imageWidth && height == imageHeight) {
+            return image;
+        }
+
+        double scaleX = (double)width/imageWidth;
+        double scaleY = (double)height/imageHeight;
+        AffineTransform scaleTransform = AffineTransform.getScaleInstance(scaleX, scaleY);
+        AffineTransformOp bilinearScaleOp = new AffineTransformOp(scaleTransform, AffineTransformOp.TYPE_BILINEAR);
+
+        return bilinearScaleOp.filter(image, new BufferedImage(width, height, image.getType()));
     }
 }

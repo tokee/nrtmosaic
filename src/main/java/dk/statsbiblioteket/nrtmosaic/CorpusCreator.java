@@ -18,9 +18,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import javax.imageio.ImageIO;
-import javax.swing.*;
 import java.awt.*;
-import java.awt.geom.AffineTransform;
 import java.awt.image.*;
 import java.io.*;
 import java.net.URL;
@@ -34,12 +32,6 @@ public class CorpusCreator {
     private static Log log = LogFactory.getLog(CorpusCreator.class);
     private static boolean cacheGenerated = false;
 
-    // Used as background when the input image is not large enough
-    public static final Color FILL_COLOR;
-    static {
-        int grey = Config.getInt("tile.fillgrey");
-        FILL_COLOR = new Color(grey, grey, grey);
-    }
     public static final int MAX_LEVEL = Config.getInt("pyramid.maxlevel"); // 128x128
 
     public static void main(String[] argsA) throws IOException {
@@ -127,7 +119,7 @@ public class CorpusCreator {
 
         for (int level = maxLevel; level > 0 ; level--) {
             int edge = Config.imhotep.getTileEdge(level);
-            BufferedImage scaled = getScaledImage(inImage, edge*fw, edge*fh);
+            BufferedImage scaled = Util.scale(inImage, edge * fw, edge * fh);
 //            System.out.println("level=" + level + ", avg=" + avg(scaled));
             int[] sourcePixels = new int[edge*edge];
             byte[] pData = new byte[edge*edge];
@@ -167,56 +159,11 @@ public class CorpusCreator {
         return pyramid;
     }
 
-    private void show(byte[] pData, int edge) { // Debug
-        BufferedImage image = new BufferedImage(edge, edge, BufferedImage.TYPE_BYTE_GRAY);
-        int[] data = new int[pData.length];
-        for (int i = 0 ; i < pData.length ; i++) {
-            data[i] = 0xFF & pData[i];
-        }
-        image.getRaster().setPixels(0, 0, edge, edge, data);
-        Util.show(image);
-    }
-
-
-    private int avg(BufferedImage scaled) {
-        long sum = 0 ;
-        int w = scaled.getWidth();
-        int h = scaled.getHeight();
-        int[] pixels = new int[w*h];
-        scaled.getRaster().getPixels(0, 0, w, h, pixels);
-        for (int i = 0 ; i < w*h ; i++) {
-            sum += pixels[i];
-        }
-        return (int) (sum / (w * h));
-    }
 
     private BufferedImage renderToFull(BufferedImage in, int level) {
-        BufferedImage full = new BufferedImage(
-                Config.imhotep.getTileEdge(level) * Config.imhotep.getFractionWidth(),
-                Config.imhotep.getTileEdge(level) * Config.imhotep.getFractionHeight(),
-                BufferedImage.TYPE_BYTE_GRAY);
-        Graphics g = full.getGraphics();
-        g.setColor(FILL_COLOR);
-        g.fillRect(0, 0, full.getWidth(), full.getHeight());
-        g.drawImage(in, 0, 0, null);
-        g.dispose();
-        return full;
+        return Util.pad(in,
+                   Config.imhotep.getTileEdge(level) * Config.imhotep.getFractionWidth(),
+                   Config.imhotep.getTileEdge(level) * Config.imhotep.getFractionHeight());
     }
 
-
-    // http://stackoverflow.com/questions/3967731/how-to-improve-the-performance-of-g-drawimage-method-for-resizing-images
-    public static BufferedImage getScaledImage(BufferedImage image, int width, int height) throws IOException {
-        int imageWidth  = image.getWidth();
-        int imageHeight = image.getHeight();
-        if (width == imageWidth && height == imageHeight) {
-            return image;
-        }
-
-        double scaleX = (double)width/imageWidth;
-        double scaleY = (double)height/imageHeight;
-        AffineTransform scaleTransform = AffineTransform.getScaleInstance(scaleX, scaleY);
-        AffineTransformOp bilinearScaleOp = new AffineTransformOp(scaleTransform, AffineTransformOp.TYPE_BILINEAR);
-
-        return bilinearScaleOp.filter(image, new BufferedImage(width, height, image.getType()));
-    }
 }

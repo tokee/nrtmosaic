@@ -52,9 +52,9 @@ public class TileProvider {
             try {
                 BufferedImage image = ImageIO.read(imageURL);
                 if (image.getWidth() != edge || image.getHeight() != edge) {
-                    throw new IllegalArgumentException(
-                            "The image from '" + source + "' should be " + edge + "x" + edge + " pixels but was " +
-                            image.getWidth() + "x" + image.getHeight() + " pixels");
+                    log.trace("Padding tile '" + source + "' of " + image.getWidth() + "x" + image.getHeight() +
+                              " pixels to " + edge + "x" + edge + " pixels");
+                    image = Util.pad(image, edge, edge);
                 }
                 tile = Tile23.createTile(image, keeper);
                 tileCache.put(source, tile);
