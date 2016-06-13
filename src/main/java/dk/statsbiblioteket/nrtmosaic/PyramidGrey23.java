@@ -50,9 +50,36 @@ public class PyramidGrey23 {
     }
 
     public PyramidGrey23(int maxTileLevel) {
+        this.maxTileLevel = maxTileLevel;
         this.data = new byte[tileOffsets[maxTileLevel+1]];
         this.origo = 0;
+    }
+    private PyramidGrey23(byte[] data, int origo, int maxTileLevel) {
         this.maxTileLevel = maxTileLevel;
+        this.data = data;
+        this.origo = origo;
+    }
+
+    private PyramidGrey23(int maxTileLevel, Path dat) throws IOException {
+        this(maxTileLevel);
+        final int expected = tileOffsets[maxTileLevel+1];
+        try (FileInputStream fis = new FileInputStream(dat.toFile())) {
+            int read = 0;
+            while (read < data.length) {
+                int r = fis.read(data, read, data.length - read);
+                if (r <= 0) {
+                    break;
+                }
+                read += r;
+            }
+            if (read != expected) {
+                throw new IOException("Expected " + expected + " bytes from '" + dat + "' but got only " + read);
+            }
+        }
+    }
+
+    public PyramidGrey23 createNew(Path dat) throws IOException {
+        return new PyramidGrey23(maxTileLevel, dat);
     }
     public PyramidGrey23 createNew() {
         return new PyramidGrey23(maxTileLevel);
@@ -61,24 +88,6 @@ public class PyramidGrey23 {
         return new PyramidGrey23(maxTileLevel).setID(id);
     }
 
-    private PyramidGrey23(byte[] data, int origo, int maxTileLevel) {
-        this.data = data;
-        this.origo = origo;
-        this.maxTileLevel = maxTileLevel;
-    }
-
-    private PyramidGrey23(int maxTileLevel, Path dat) throws IOException {
-        this(maxTileLevel);
-        try (FileInputStream fis = new FileInputStream(dat.toFile())) {
-            int offset = 0;
-            while (offset < data.length) {
-                offset += fis.read(data, offset, data.length - offset);
-            }
-        }
-    }
-    public PyramidGrey23 createNew(Path dat) throws IOException {
-        return new PyramidGrey23(maxTileLevel, dat);
-    }
 
     public PyramidGrey23 setID(UUID id) {
         setLong(0, id.getFirst64());

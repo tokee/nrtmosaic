@@ -31,6 +31,12 @@ public class Tile23 {
 
     private final PyramidGrey23[] map = new PyramidGrey23[edge*edge]; // Optimization: 1/3 of these are always empty.
 
+    /**
+     * Maps the pixels in the input image into Pyramids provided by the keeper.
+     * @param source the image to be mapped to Pyramids.
+     * @param keeper available pyramids.
+     * @return a tile containing the mapping from source to Pyramids.
+     */
     public static Tile23 createTile(BufferedImage source, Keeper keeper) {
         if (source.getWidth() != edge || source.getHeight() != edge) {
             throw new IllegalArgumentException(
@@ -43,6 +49,7 @@ public class Tile23 {
 
         int[] pixels = new int[edge*edge];
         source.getRaster().getPixels(0, 0, edge, edge, pixels);
+        // TODO: Map from -1 to edge instead of 0 to edge-1 to avoid the black horizontal lines
         for (int y = 0 ; y < edge ; y++) {
             switch (y*2%3) {
                 case 2:   // None (1, 4, 7, 10...)

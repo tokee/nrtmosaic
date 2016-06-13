@@ -49,9 +49,10 @@ public class CorpusCreator {
 
     public static synchronized void generateCache() {
         if (cacheGenerated) {
-            log.debug("Corpus cache already generated");
+            log.info("Corpus cache already generated");
             return;
         }
+        long startTime = System.nanoTime();
         cacheGenerated = true;
         final boolean overwrite = Config.getBool("corpuscreator.overwrite");
         final String sString = Config.getString("pyramid.source");
@@ -81,7 +82,7 @@ public class CorpusCreator {
                 processed++;
                 UUID id = new UUID(line);
                 if (!overwrite && Files.exists(Config.imhotep.getFullPath(dest, id))) {
-                    log.debug("Skipping " + line + " as a pyramid already exists for it");
+                    log.trace("Skipping " + line + " as a pyramid already exists for it");
                     continue;
                 }
                 PyramidGrey23 pyramid;
@@ -99,7 +100,9 @@ public class CorpusCreator {
         } catch (IOException e) {
             throw new RuntimeException("IOException while reading " + sString, e);
         }
-        log.info("Created " + created + "/" + processed + " pyramids from URLs in " + sString +
+        log.info("Pyramid creation finished in " + (System.nanoTime()-startTime)/1000000 + "ms." +
+                 " Newly created: " + created + ", already existing: " + (processed-created) +
+                 ", total images available: " + processed + ", source: " + sString +
                  ", storing pyramids at " + dest);
     }
 

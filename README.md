@@ -132,6 +132,8 @@ http://achernar/iipsrv/?IIIF=/avis-show/symlinks/f/d/f/5/fdf5d350-360a-49db-ada5
 
 
 ### Deploy
+Tip: NRT-Mosaic is hungry for file handles. 1024 open files (check with 'ulimit -n') is probably not enough
+
 curl "http://ftp.download-by.net/apache/tomcat/tomcat-8/v8.0.35/bin/apache-tomcat-8.0.35.tar.gz" > apache-tomcat-8.0.35.tar.gz
 tar xzovf apache-tomcat-8.0.35.tar.gz
 ln -s apache-tomcat-8.0.35 tomcat

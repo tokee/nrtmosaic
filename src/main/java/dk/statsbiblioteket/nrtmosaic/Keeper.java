@@ -47,7 +47,8 @@ public class Keeper {
 
     // /tmp/pyramid_test1631652512768907712/ 02/ 82/ 02823b5f223a41249913985cb5ad815f.dat
     public Keeper(Path root) {
-        CorpusCreator.generateCache(); // Entangled coding. Consider an overall application control class instead
+        long startTime = System.nanoTime();
+        log.debug("Loading pyramids from " + root);
         wrappedList(root).
                 filter(sub1 -> Files.isDirectory(sub1)).
                 forEach(sub1 -> wrappedList(sub1).
@@ -56,6 +57,7 @@ public class Keeper {
                                 filter(dat -> Files.isRegularFile(dat) && dat.toString().endsWith(".dat")).
                                 forEach(this::addPyramid)));
         sortPyramids();
+        log.info("Finished loading " + size() + " pyramids in " + (System.nanoTime()-startTime)/1000000 + "ms");
     }
 
     private void sortPyramids() {
@@ -110,14 +112,16 @@ public class Keeper {
     private void addPyramid(Path dat) {
         PyramidGrey23 pyramid;
         try {
-            pyramid = Config.imhotep.createNew(dat);
-            log.debug("Loaded " + pyramid);
-        } catch (IOException e) {
-            // TODO: Consider logging and continuing here, but catch the case where there are only errors
-            throw new RuntimeException("IOException reading pyramid data from " + dat, e);
+            if ((pyramid = Config.imhotep.createNew(dat)) == null) {
+                return;
+            }
+        } catch (Exception e) {
+            log.warn("Unable to load Pyramid from '" + dat + "'", e);
+            return;
         }
         pyramidsTop.get(pyramid.getTopPrimary()).add(pyramid);
         pyramidsBottom.get(pyramid.getBottomPrimary()).add(pyramid);
+        log.trace("Loaded #" + size() + " " + pyramid);
     }
 
     private Stream<Path> wrappedList(Path folder) {

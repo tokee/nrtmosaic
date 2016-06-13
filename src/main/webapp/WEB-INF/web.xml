@@ -5,8 +5,11 @@
          version="3.0">
 
   <display-name>dk.statsbiblioteket.nrtmosaic.service</display-name>
-  
-  
+
+  <listener>
+    <listener-class>dk.statsbiblioteket.nrtmosaic.service.NrtmosaicResource</listener-class>
+  </listener>
+
   <servlet>
     <servlet-name>Nrtmosaic Service</servlet-name>
     <servlet-class>com.sun.jersey.spi.container.servlet.ServletContainer</servlet-class>

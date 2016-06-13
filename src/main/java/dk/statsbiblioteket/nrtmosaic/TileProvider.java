@@ -29,9 +29,15 @@ import java.util.Map;
 public class TileProvider {
     private static Log log = LogFactory.getLog(TileProvider.class);
 
-    private static final Keeper keeper = new Keeper();
-    private static final Map<String, Tile23> tileCache = new LRUCache<String, Tile23>(Config.getInt("tile.cachesize"));
-    private static int edge = Config.getInt("tile.edge");
+    private final Keeper keeper;
+    private final Map<String, Tile23> tileCache;
+    private final int edge;
+
+    public TileProvider(Keeper keeper) {
+        this.keeper = keeper;
+        tileCache  = new LRUCache<>(Config.getInt("tile.cachesize"));
+        edge = Config.getInt("tile.edge");
+    }
 
     /**
      * Resolve a Tile from the source and generate an image based on it.
@@ -41,9 +47,10 @@ public class TileProvider {
      * @param z 2 returns image made up of pyramids scaled to 2x3 pixels.
      * @return a mosaic that should look approximately like the source at the given z level.
      */
-    public static BufferedImage getTile(String source, int x, int y, int z) {
-        CorpusCreator.generateCache();
+    public BufferedImage getTile(String source, int x, int y, int z) {
+        long startTime = System.nanoTime();
         Tile23 tile = tileCache.get(source);
+        boolean created = tile == null;
         if (tile == null) {
             URL imageURL = Util.resolveURL(source);
             if (imageURL == null) {
@@ -62,10 +69,9 @@ public class TileProvider {
                 throw new RuntimeException("Unable to resolve tile for source=" + source + ", x=" + x + ", y=" + y + ", z=" + z);
             }
         }
-        long startTime = System.nanoTime();
         BufferedImage rendered = tile.renderImage(x, y, z, null);
-        log.debug("Rendered tile for source=" + source + ", x=" + x + ", y=" + y + ", z=" + z + " in " +
-                  (System.nanoTime()-startTime)/1000000 + "ms");
+        log.debug((created ? "Mapped and rendered" : "Rendered") + " tile for source=" + source +
+                  ", x=" + x + ", y=" + y + ", z=" + z + " in " + (System.nanoTime()-startTime)/1000000 + "ms");
         return rendered;
     }
 }

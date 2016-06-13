@@ -7,7 +7,10 @@ import java.net.URL;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import javax.annotation.PostConstruct;
 import javax.imageio.ImageIO;
+import javax.servlet.ServletContextEvent;
+import javax.servlet.ServletContextListener;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
@@ -16,7 +19,7 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.ResponseBuilder;
 
-import dk.statsbiblioteket.nrtmosaic.TileProvider;
+import dk.statsbiblioteket.nrtmosaic.Prime;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -26,14 +29,24 @@ import dk.statsbiblioteket.nrtmosaic.service.exception.ServiceException;
 
 
 @Path("/")
-public class NrtmosaicResource {
+public class NrtmosaicResource implements ServletContextListener {
 
     private static Log log = LogFactory.getLog(NrtmosaicResource.class);
 
-    //"http://achernar/iipsrv/?GAM=2.0&CNT=1.1&DeepZoom=/avis-show/symlinks/${P}.jp2_files/8/0_0" 
+    @Override
+    public void contextInitialized(ServletContextEvent sce) {
+        Prime.instance(); // Start everything
+    }
+
+    @Override
+    public void contextDestroyed(ServletContextEvent sce) {
+        // Nothing to do right now
+    }
+
+    //"http://achernar/iipsrv/?GAM=2.0&CNT=1.1&DeepZoom=/avis-show/symlinks/${P}.jp2_files/8/0_0"
     
-            //http://achernar/iipsrv/?GAM=2.0&CNT=1.1&DeepZoom=/avis-show/symlinks/5/3/8/6/5386aa42-92bd-4ffc-b4f4-ad69b0610d00.jp2.dzi/10/2_1.jpg    
-           //DeepZoom=/avis-show/symlinks/${P}.jp2_files/8/0_0
+    //http://achernar/iipsrv/?GAM=2.0&CNT=1.1&DeepZoom=/avis-show/symlinks/5/3/8/6/5386aa42-92bd-4ffc-b4f4-ad69b0610d00.jp2.dzi/10/2_1.jpg
+    //DeepZoom=/avis-show/symlinks/${P}.jp2_files/8/0_0
     @GET
     @Path("/image/iipsrv/")
     @Produces("image/jpeg")
@@ -103,7 +116,7 @@ public class NrtmosaicResource {
             final int origoFX = sourceFX*zoomFactor;
             final int origoFY = sourceFY*zoomFactor;
             String external = toExternalURL(gam, cnt, pre + "/" + CUTOFF + "/" + sourceFX + "_" + sourceFY + post);
-            return TileProvider.getTile(external, fx-origoFX, fy-origoFY, level-CUTOFF+1);
+            return Prime.instance().getTileProvider().getTile(external, fx - origoFX, fy - origoFY, level - CUTOFF + 1);
 //            return TileProvider.getTile("/home/te/tmp/nrtmosaic/256/source_9c05d958-b616-47c1-9e4f-63ec2dd9429e_13_13_13.jpg", 0, 0, 1);
         }
         // TODO: Add check for zoom level
