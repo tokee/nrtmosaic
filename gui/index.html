@@ -1,0 +1,44 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>NRT-Mosaic demo</title>
+    <link rel="stylesheet" type="text/css" href="nrtmosaic.css" />
+    <script src="openseadragon.min.js"></script>
+</head>
+
+<body class="previewpage">
+
+<div id="zoom-display" class="openseadragon">
+</div>
+
+<script type="text/javascript">
+    myDragon = OpenSeadragon({
+    id: "zoom-display",
+    maxZoomLevel: 4096,
+    
+    prefixUrl:     "images/",
+
+    showNavigator:  false,
+    wrapHorizontal: false,
+    
+    tileSources: {
+    Image: {
+        xmlns:    "http://schemas.microsoft.com/deepzoom/2008",
+        Url:      "http://tokemon.sb.statsbiblioteket.dk:8080/nrtmosaic/services/image/deepzoom/?GAM=2.0&CNT=1.1&DeepZoom=/avis-show/symlinks/9/c/0/5/9c05d958-b616-47c1-9e4f-63ec2dd9429e.jp2_files/",
+        Format:   "jpg",
+        Overlap:  "0",
+        TileSize: "256",
+        Size: {
+            Width:  4881*256,
+            Height: 7531*256,
+        }
+    }
+    }
+    }
+);
+</script>
+
+</body>
+</html>
