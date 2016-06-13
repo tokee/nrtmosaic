@@ -138,5 +138,10 @@ ln -s apache-tomcat-8.0.35 tomcat
 echo "export JAVA_OPTS=\""-Xmx1000m $JAVA_OPTS\"" > tomcat/bin/setenv.sh
 tomcat/bin/startup.sh
 ./deployLocalTomcat.sh
+cp -r gui/ tomcat/webapps/
 
-http://tokemon:8080/nrtmosaic/services/image?source=foo&x=1&y=1&z=1
+Test image:
+http://localhost:8080/nrtmosaic/services/image?source=foo&x=1&y=1&z=1
+
+Sample GUI:
+http://localhost:8080/gui/
