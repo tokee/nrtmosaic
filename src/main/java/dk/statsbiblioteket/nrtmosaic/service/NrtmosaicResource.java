@@ -73,9 +73,7 @@ public class NrtmosaicResource implements ServletContextListener {
                              @QueryParam("DeepZoom") String deepZoom) throws ServiceException {
         try {
             if (!deepZoom.contains(".dzi")){
-//                log.debug("Deepzoom called with GAM="+gam +" , CNT="+cnt +" ,DeepZoom="+deepZoom);
-
-                BufferedImage image = checkRedirect(gam, cnt, deepZoom);
+                BufferedImage image = Prime.instance().deepzoom(deepZoom, gam, cnt);
                 if (image == null) {
                     image = renderSampleImage();
                 }
@@ -93,43 +91,6 @@ public class NrtmosaicResource implements ServletContextListener {
         }
     }
 
-    private static final Pattern DEEPZOOM = Pattern.compile("(.*)/([0-9]+)/([0-9]+)_([0-9]+)(.*)");
-    public BufferedImage checkRedirect(String gam, String cnt, String deepZoom) throws IOException {
-        final int CUTOFF = 13;
-
-        // /avis-show/symlinks/9/c/0/5/9c05d958-b616-47c1-9e4f-63ec2dd9429e.jp2_files/0/0_0.jpg
-        Matcher deepMatch = DEEPZOOM.matcher(deepZoom);
-        if (!deepMatch.matches()) {
-            throw new IllegalAccessError("The deepzoom request '" + deepZoom + "' could not be parsed");
-        }
-        final String pre = deepMatch.group(1);
-        final int level = Integer.parseInt(deepMatch.group(2));
-        final int fx = Integer.parseInt(deepMatch.group(3));
-        final int fy = Integer.parseInt(deepMatch.group(4));
-        final String post = deepMatch.group(5);
-
-        if (level > CUTOFF) {
-            log.trace("Creating mosaic tile for " + deepZoom);
-            final int zoomFactor = (int) Math.pow(2, level - CUTOFF);
-            final int sourceFX = fx/zoomFactor;
-            final int sourceFY = fy/zoomFactor;
-            final int origoFX = sourceFX*zoomFactor;
-            final int origoFY = sourceFY*zoomFactor;
-            String external = toExternalURL(gam, cnt, pre + "/" + CUTOFF + "/" + sourceFX + "_" + sourceFY + post);
-            return Prime.instance().getTileProvider().getTile(external, fx - origoFX, fy - origoFY, level - CUTOFF + 1);
-//            return TileProvider.getTile("/home/te/tmp/nrtmosaic/256/source_9c05d958-b616-47c1-9e4f-63ec2dd9429e_13_13_13.jpg", 0, 0, 1);
-        }
-        // TODO: Add check for zoom level
-        return ImageIO.read(new URL(toExternalURL(gam, cnt, deepZoom)));
-    }
-
-    private String toExternalURL(String gam, String cnt, String deepZoom) {
-        String url = "http://achernar/iipsrv/?GAM=" + gam + "&CNT=" + cnt + "&DeepZoom=" + deepZoom;
-        log.trace("Redirecting to " + url);
-        return url;
-    }
-
-
     @GET
     @Path("/image")
     @Produces("image/jpeg")
@@ -141,7 +102,7 @@ public class NrtmosaicResource implements ServletContextListener {
             
             BufferedImage image = renderSampleImage();
                                     
-            ResponseBuilder response = Response.ok((Object) image);
+            ResponseBuilder response = Response.ok(image);
             return response.build();
         } catch (Exception e) {            
             throw handleServiceExceptions(e);
