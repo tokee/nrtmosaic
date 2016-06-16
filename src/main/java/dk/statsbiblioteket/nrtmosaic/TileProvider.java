@@ -47,31 +47,43 @@ public class TileProvider {
      * @param z 2 returns image made up of pyramids scaled to 2x3 pixels.
      * @return a mosaic that should look approximately like the source at the given z level.
      */
-    public BufferedImage getTile(String source, int x, int y, int z) {
+    public BufferedImage getTileRender(String source, int x, int y, int z) {
+        Tile23 tile = getTile(source);
+        long startTime = System.nanoTime();
+        BufferedImage render = tile.renderImage(x, y, z, null);
+        log.debug("Rendered tile for source=" + source + ", x=" + x + ", y=" + y + ", z=" + z +
+                  " in " + (System.nanoTime()-startTime)/1000000 + "ms");
+        return render;
+    }
+
+    /**
+     * Resolve a Tile for the source, mapping the source to Pyramids if not already cached.
+     * @param source an image, expected to be edge*edge pixels, but padding will be applied if too small.
+     * @return a Tile that should look render approximately like the source at the given z level.
+     */
+    public Tile23 getTile(String source) {
         long startTime = System.nanoTime();
         Tile23 tile = tileCache.get(source);
-        boolean created = tile == null;
-        if (tile == null) {
-            URL imageURL = Util.resolveURL(source);
-            if (imageURL == null) {
-                throw new IllegalArgumentException("Unable to load image from '" + source + "'");
-            }
-            try {
-                BufferedImage image = ImageIO.read(imageURL);
-                if (image.getWidth() != edge || image.getHeight() != edge) {
-                    log.trace("Padding tile '" + source + "' of " + image.getWidth() + "x" + image.getHeight() +
-                              " pixels to " + edge + "x" + edge + " pixels");
-                    image = Util.pad(image, edge, edge);
-                }
-                tile = Tile23.createTile(image, keeper);
-                tileCache.put(source, tile);
-            } catch (IOException e) {
-                throw new RuntimeException("Unable to resolve tile for source=" + source + ", x=" + x + ", y=" + y + ", z=" + z);
-            }
+        if (tile != null) {
+            return tile;
         }
-        BufferedImage rendered = tile.renderImage(x, y, z, null);
-        log.debug((created ? "Mapped and rendered" : "Rendered") + " tile for source=" + source +
-                  ", x=" + x + ", y=" + y + ", z=" + z + " in " + (System.nanoTime()-startTime)/1000000 + "ms");
-        return rendered;
+        URL imageURL = Util.resolveURL(source);
+        if (imageURL == null) {
+            throw new IllegalArgumentException("Unable to load image from '" + source + "'");
+        }
+        try {
+            BufferedImage image = ImageIO.read(imageURL);
+            if (image.getWidth() != edge || image.getHeight() != edge) {
+                log.trace("Padding tile '" + source + "' of " + image.getWidth() + "x" + image.getHeight() +
+                          " pixels to " + edge + "x" + edge + " pixels");
+                image = Util.pad(image, edge, edge);
+            }
+            tile = Tile23.createTile(image, keeper);
+            tileCache.put(source, tile);
+        } catch (IOException e) {
+            throw new RuntimeException("Unable to resolve tile for source=" + source);
+        }
+        log.debug("Mapped tile for source=" + source + " in " + (System.nanoTime()-startTime)/1000000 + "ms");
+        return tile;
     }
 }

@@ -28,8 +28,16 @@ public class Tile23 {
     private static Log log = LogFactory.getLog(Tile23.class);
 
     public static final int edge = Config.getInt("tile.edge");
+     // Potential optimization: 1/3 of these are always empty.
+    private final PyramidGrey23[] pyramids = new PyramidGrey23[edge*edge];
 
-    private final PyramidGrey23[] map = new PyramidGrey23[edge*edge]; // Optimization: 1/3 of these are always empty.
+    public void setPyramid(int x, int y, PyramidGrey23 pyramid) {
+        pyramids[y*edge+x] = pyramid;
+    }
+
+    public PyramidGrey23 getPyramid(int x, int y) {
+        return pyramids[y*edge+x];
+    }
 
     /**
      * Maps the pixels in the input image into Pyramids provided by the keeper.
@@ -61,7 +69,7 @@ public class Tile23 {
                     for (int x = 0 ; x < edge ; x++) {
                         int primary = pixels[y*edge + x];
                         int secondary = pixels[(y+1)*edge + x];
-                        tile.map[y*edge+x] = keeper.getClosestTop(primary, secondary, random);
+                        tile.setPyramid(x, y, keeper.getClosestTop(primary, secondary, random));
                     }
                     break;
                 }
@@ -69,7 +77,7 @@ public class Tile23 {
                     for (int x = 0; x < edge; x++) {
                         int primary = pixels[y * edge + x];
                         int secondary = pixels[(y - 1) * edge + x];
-                        tile.map[y*edge+x] = keeper.getClosestBottom(primary, secondary, random);
+                        tile.setPyramid(x, y, keeper.getClosestBottom(primary, secondary, random));
                     }
                 }
             }
@@ -119,7 +127,7 @@ public class Tile23 {
                 final int canvasY = (int) ((sourceY - startY) * sourceToCanvasFactorY);
 //                log.debug("Rendering source(" + sourceX + ", " + sourceY + ") -> canvas(" +
 //                          canvasX + ", " + canvasY + ")");
-                final PyramidGrey23 pyramid = map[sourceY*edge + sourceX]; // Will be null for y*2%3==2
+                final PyramidGrey23 pyramid = getPyramid(sourceX, sourceY); // Will be null for y*2%3==2
                 if (pyramid == null) {
                     continue; // Bit dangerous as we do not discover if everything is null
                 }

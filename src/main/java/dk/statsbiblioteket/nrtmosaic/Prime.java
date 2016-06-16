@@ -20,7 +20,6 @@ import org.apache.commons.logging.Log;
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -35,6 +34,7 @@ public class Prime {
     private final TileProvider tileProvider;
     private final int LAST_BASIC_LEVEL;
     private final int LAST_RENDER_LEVEL;
+    // Last level is REDIRECT
 
     private static Prime singleton;
     public static synchronized Prime instance() {
@@ -85,22 +85,61 @@ public class Prime {
         final String post = deepMatch.group(5);
 
         if (level > LAST_RENDER_LEVEL) {
-            log.trace("Creating tile by piping image server tile for " + deepZoomSnippet);
-            throw new UnsupportedOperationException("Level " + level + " zoom not implemented yet");
+            return deepzoomRedirect(pre, fx, fy, level, post, gam, cnt);
         } else if (level > LAST_BASIC_LEVEL) {
-            log.trace("Creating mosaic tile for " + deepZoomSnippet);
-            final int zoomFactor = (int) Math.pow(2, level - LAST_BASIC_LEVEL);
-            final int sourceFX = fx/zoomFactor;
-            final int sourceFY = fy/zoomFactor;
-
-            final int origoFX = sourceFX*zoomFactor;
-            final int origoFY = sourceFY*zoomFactor;
-            String external = toExternalURL(gam, cnt, pre + "/" + LAST_BASIC_LEVEL + "/" + sourceFX + "_" + sourceFY + post);
-            return tileProvider.getTile(external, fx - origoFX, fy - origoFY, level - LAST_BASIC_LEVEL + 1);
-//            return TileProvider.getTile("/home/te/tmp/nrtmosaic/256/source_9c05d958-b616-47c1-9e4f-63ec2dd9429e_13_13_13.jpg", 0, 0, 1);
+            return deepzoomRender(pre, fx, fy, level, post, gam, cnt);
         }
-        // TODO: Add check for zoom level
+        return deepZoomBasic(deepZoomSnippet, gam, cnt);
+    }
+
+    // Topmost levels where NRTMosaic works as a plain image server
+    private BufferedImage deepZoomBasic(String deepZoomSnippet, String gam, String cnt) throws IOException {
         return ImageIO.read(new URL(toExternalURL(gam, cnt, deepZoomSnippet)));
+    }
+
+    // Middle level where NRTMosaic renders tiles
+    private BufferedImage deepzoomRender(
+            String pre, int fx, int fy, int level, String post, String gam, String cnt) {
+        log.trace("Rendering tile for " + pre + ", " + fx + "x" + fy + ", level " + level);
+        final int zoomFactor = (int) Math.pow(2, level - LAST_BASIC_LEVEL);
+        final int sourceFX = fx/zoomFactor;
+        final int sourceFY = fy/zoomFactor;
+
+        final int origoFX = sourceFX*zoomFactor;
+        final int origoFY = sourceFY*zoomFactor;
+        String external = toExternalURL(
+                gam, cnt, pre + "/" + LAST_BASIC_LEVEL + "/" + sourceFX + "_" + sourceFY + post);
+        Tile23 tile = tileProvider.getTile(external);
+        return tile.renderImage(fx - origoFX, fy - origoFY, level - LAST_BASIC_LEVEL + 1, null);
+//            return TileProvider.getTileRender("/home/te/tmp/nrtmosaic/256/source_9c05d958-b616-47c1-9e4f-63ec2dd9429e_13_13_13.jpg", 0, 0, 1);
+    }
+
+    // /avis-show/symlinks/9/c/0/5/9c05d958-b616-47c1-9e4f-63ec2dd9429e.jp2_files
+    // 0
+    // 0
+    // 0
+    // .jpg
+
+    // Bottom level where NRTMosaic passes tiles from the image server for different images
+    private BufferedImage deepzoomRedirect(String pre, int fx, int fy, int level, String post, String gam, String cnt) {
+        log.trace("Redirecting tile for " + pre + ", " + fx + "x" + fy + ", level " + level);
+        Tile23 tile;
+        {
+            // Get render-tile
+            final int zoomFactor = (int) Math.pow(2, level - LAST_BASIC_LEVEL);
+            final int sourceFX = fx / zoomFactor;
+            final int sourceFY = fy / zoomFactor;
+            String external = toExternalURL(
+                    gam, cnt, pre + "/" + LAST_BASIC_LEVEL + "/" + sourceFX + "_" + sourceFY + post);
+            tile = tileProvider.getTile(external);
+
+            // Locate the right Pyramid in the Tile
+            final int origoFX = sourceFX * zoomFactor;
+            final int origoFY = sourceFY * zoomFactor;
+
+        }
+
+        throw new UnsupportedOperationException("Level " + level + " zoom not implemented yet");
     }
 
     private String toExternalURL(String gam, String cnt, String deepZoom) {

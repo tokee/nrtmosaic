@@ -5,7 +5,6 @@ import org.junit.Test;
 import javax.imageio.ImageIO;
 import javax.swing.*;
 import java.awt.*;
-import java.awt.image.BufferedImage;
 import java.io.IOException;
 
 /*
@@ -32,12 +31,12 @@ public class TileProviderTest {
 
     @Test
     public void testSampleTileBasic() throws InterruptedException, IOException {
-        Prime.instance().getTileProvider().getTile(SAMPLE_1, 0, 0, 2);
+        Prime.instance().getTileProvider().getTileRender(SAMPLE_1, 0, 0, 2);
     }
 
     @Test
     public void testSampleTileOffset() throws InterruptedException, IOException {
-        Util.show(Prime.instance().getTileProvider().getTile(SAMPLE_2, 0, 0, 2));
+        Util.show(Prime.instance().getTileProvider().getTileRender(SAMPLE_2, 0, 0, 2));
     }
 
     @Test
@@ -52,7 +51,7 @@ public class TileProviderTest {
         dialog.getContentPane().add(new JLabel(scale(new ImageIcon(ImageIO.read(Util.resolveURL(original))))));
         for (int level = 1 ; level <= 9 ; level++) {
             dialog.getContentPane().add(new JLabel(scale(new ImageIcon(
-                    Prime.instance().getTileProvider().getTile(original, 0, 0, level)))));
+                    Prime.instance().getTileProvider().getTileRender(original, 0, 0, level)))));
         }
         dialog.setVisible(true);
         dialog.pack();
