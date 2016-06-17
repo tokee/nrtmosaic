@@ -36,6 +36,7 @@ public class Prime {
     private final int FIRST_BASIC_LEVEL;
     private final int LAST_BASIC_LEVEL;
     private final int LAST_RENDER_LEVEL;
+    private final int edge;
     // Last level is REDIRECT
 
     private static Prime singleton;
@@ -63,6 +64,7 @@ public class Prime {
         CorpusCreator.generateCache();
         keeper = new Keeper();
         tileProvider = new TileProvider(keeper);
+        edge = Config.getInt("tile.edge");
         log.info("Prime constructed in " + (System.nanoTime()-startTime)/1000000 + "ms");
     }
 
@@ -92,14 +94,16 @@ public class Prime {
         } else if (level > LAST_BASIC_LEVEL) {
             return deepzoomRender(pre, fx, fy, level, post, gam, cnt);
         }
-        return deepZoomBasic(deepZoomSnippet, gam, cnt);
+        return deepZoomBasic(deepZoomSnippet, gam, cnt, false);
     }
 
     // Topmost levels where NRTMosaic works as a plain image server
-    private BufferedImage deepZoomBasic(String deepZoomSnippet, String gam, String cnt) throws IOException {
+    private BufferedImage deepZoomBasic(String deepZoomSnippet, String gam, String cnt, boolean pad)
+            throws IOException {
         URL external = new URL(toExternalURL(gam, cnt, deepZoomSnippet));
         try {
-            return ImageIO.read(external);
+            BufferedImage unpadded = ImageIO.read(external);
+            return pad ? Util.pad(unpadded, edge, edge) : unpadded;
         } catch (IIOException e) {
             throw new IIOException("Unable to read '" + external + "' as an image", e);
         }
@@ -166,7 +170,7 @@ public class Prime {
         final String basicSnippet = toBasicDeepzoomSnippet(pyramid, redirectFX, redirectFY, level);
         log.info("Resolved redirect from " + pre + " " + fx + "x" + fy + ", level " + level + " to deepzoom call " +
                  basicSnippet);
-        return deepZoomBasic(basicSnippet, gam, cnt);
+        return deepZoomBasic(basicSnippet, gam, cnt, true);
     }
 
     private String toBasicDeepzoomSnippet(PyramidGrey23 pyramid, int redirectFX, int redirectFY, int level) {
