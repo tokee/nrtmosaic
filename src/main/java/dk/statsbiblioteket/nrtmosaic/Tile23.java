@@ -155,7 +155,7 @@ public class Tile23 {
                         if (pyramid == null) {
                             continue; // Bit dangerous as we do not discover if everything is null
                         }
-                        renderBottom(pyramid, pyramidLevel, canvas, canvasX, canvasY-pyramidTileEdge);
+                        renderBottom(pyramid, pyramidLevel, canvas, canvasX, canvasY);
                         break;
                     }
                 }
@@ -163,7 +163,7 @@ public class Tile23 {
         }
         reuse.getRaster().setPixels(0, 0, edge, edge, canvas);
         log.trace("Rendered tile for " + subTileX + "x" + subTileY + ", level " + level + " in " +
-                  (System.nanoTime()-startNS)/1000000 + "ms");
+                  (System.nanoTime() - startNS) / 1000000 + "ms");
         return reuse;
     }
 
@@ -176,11 +176,33 @@ public class Tile23 {
         }
         final int pTileEdge = pyramid.getTileEdge(level);
 //        log.debug("Render pyramid(edge=" + pTileEdge + ") -> canvas(" + canvasOrigoX + ", " + canvasOrigoY + ")");
+        final int squareSide = pyramid.getFractionWidth();
 
-        for (int fy = 0 ; fy < pyramid.getFractionWidth() ; fy++) {
-            for (int fx = 0; fx < pyramid.getFractionWidth(); fx++) {
+        for (int fy = 0 ; fy < squareSide ; fy++) {
+            for (int fx = 0; fx < squareSide; fx++) {
                 pyramid.copyPixels(level, fx, fy, canvas, canvasOrigoX+fx*pTileEdge, canvasOrigoY+fy*pTileEdge, edge);
             }
+        }
+    }
+    private void debugRect(int[] canvas, int left, int top, int right, int bottom, int grey) {
+        for (int x = left ; x <= right ; x++) {
+            debugSet(canvas, x, top, grey);
+            debugSet(canvas, x, top+1, grey);
+            debugSet(canvas, x, bottom-1, grey);
+            debugSet(canvas, x, bottom, grey);
+        }
+        for (int y = top ; y <= bottom ; y++) {
+            debugSet(canvas, left, y, grey);
+            debugSet(canvas, left+2, y, grey);
+            debugSet(canvas, right-1, y, grey);
+            debugSet(canvas, right, y, grey);
+        }
+    }
+
+    private void debugSet(int[] canvas, int x, int y, int grey) {
+        int index = y*edge+x;
+        if (index < edge*edge) {
+            canvas[index] = grey;
         }
     }
 
@@ -193,12 +215,18 @@ public class Tile23 {
         }
         final int pTileEdge = pyramid.getTileEdge(level);
 //        log.debug("Render pyramid(edge=" + pTileEdge + ") -> canvas(" + canvasOrigoX + ", " + canvasOrigoY + ")");
+        final int fw = pyramid.getFractionWidth();
+        final int fh = pyramid.getFractionHeight();
+        final int height = fh-fw;
 
-        for (int fy = pyramid.getFractionHeight()-pyramid.getFractionWidth() ; fy < pyramid.getFractionHeight() ; fy++) {
+        for (int fy = height ; fy < fh ; fy++) {
             for (int fx = 0; fx < pyramid.getFractionWidth(); fx++) {
-                pyramid.copyPixels(level, fx, fy, canvas, canvasOrigoX+fx*pTileEdge, canvasOrigoY+fy*pTileEdge, edge);
+                pyramid.copyPixels(level, fx, fy, canvas,
+                                   canvasOrigoX+fx*pTileEdge, canvasOrigoY+(fy-height)*pTileEdge, edge);
             }
         }
+
+//        debugRect(canvas, canvasOrigoX, canvasOrigoY, canvasOrigoX+2*pTileEdge, canvasOrigoY+2*pTileEdge, 100);
     }
 
     // Render bottom 1/3 of pyramidTop and top 1/3 of pyramidBottom, the result should be square
@@ -211,20 +239,24 @@ public class Tile23 {
         final int pTileEdge = pyramidTop.getTileEdge(level);
 //        log.debug("Render pyramid(edge=" + pTileEdge + ") -> canvas(" + canvasOrigoX + ", " + canvasOrigoY + ")");
         final int fw = pyramidTop.getFractionWidth();
-        final int fh = pyramidBottom.getFractionWidth();
+        final int fh = pyramidTop.getFractionHeight();
+        final int height = fh-fw;
 
         // Bottom 1/3 of pyramidTop
-        for (int fy = fh-fw ; fy < fh ; fy++) {
+        for (int fy = fw ; fy < fh ; fy++) {
             for (int fx = 0; fx < fw; fx++) {
-                pyramidTop.copyPixels(level, fx, fy, canvas, canvasOrigoX+fx*pTileEdge, canvasOrigoY+fy*pTileEdge, edge);
+                pyramidTop.copyPixels(level, fx, fy, canvas,
+                                      canvasOrigoX+fx*pTileEdge, canvasOrigoY+(fy-fw)*pTileEdge, edge);
             }
         }
         // Top 1/3 of pyramidBottom
         for (int fy = 0 ; fy < fh-fw ; fy++) {
             for (int fx = 0; fx < fw; fx++) {
-                pyramidTop.copyPixels(level, fx, fy, canvas, canvasOrigoX+fx*pTileEdge, canvasOrigoY+fy*pTileEdge, edge);
+                pyramidBottom.copyPixels(level, fx, fy, canvas,
+                                      canvasOrigoX+fx*pTileEdge, canvasOrigoY+(fy+height)*pTileEdge, edge);
             }
         }
+//        debugRect(canvas, canvasOrigoX, canvasOrigoY, canvasOrigoX+2*pTileEdge, canvasOrigoY+2*pTileEdge, 50);
     }
 
 
