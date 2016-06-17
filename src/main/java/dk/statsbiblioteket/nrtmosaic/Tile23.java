@@ -133,19 +133,29 @@ public class Tile23 {
                 final int canvasY = (int) ((sourceY - startY) * sourceToCanvasFactorY);
 //                log.debug("Rendering source(" + sourceX + ", " + sourceY + ") -> canvas(" +
 //                          canvasX + ", " + canvasY + ")");
-                final PyramidGrey23 pyramid = getPyramid(sourceX, sourceY); // Will be null for y*2%3==2
-                if (pyramid == null) {
-                    continue; // Bit dangerous as we do not discover if everything is null
-                }
                 switch (sourceY * 2 % 3) {
                     case 2:   // None (1, 4, 7, 10...)
-                        continue;
+                        final PyramidGrey23 pyramidTop = getPyramid(sourceX, sourceY-1);
+                        final PyramidGrey23 pyramidBottom = getPyramid(sourceX, sourceY+1);
+                        if (pyramidTop == null || pyramidBottom == null) {
+                            continue; // Bit dangerous as we do not discover if everything is null
+                        }
+                        renderDual(pyramidTop, pyramidBottom, pyramidLevel, canvas, canvasX, canvasY);
+                        break;
                     case 0: { // Top-down (0, 3, 6, 9...)
-                        render(pyramid, pyramidLevel, canvas, canvasX, canvasY);
+                        final PyramidGrey23 pyramid = getPyramid(sourceX, sourceY); // Will be null for y*2%3==2
+                        if (pyramid == null) {
+                            continue; // Bit dangerous as we do not discover if everything is null
+                        }
+                        renderTop(pyramid, pyramidLevel, canvas, canvasX, canvasY);
                         break;
                     }
                     case 1: { // Bottom-up (2, 5, 8, 11...)
-                        render(pyramid, pyramidLevel, canvas, canvasX, canvasY-pyramidTileEdge);
+                        final PyramidGrey23 pyramid = getPyramid(sourceX, sourceY); // Will be null for y*2%3==2
+                        if (pyramid == null) {
+                            continue; // Bit dangerous as we do not discover if everything is null
+                        }
+                        renderBottom(pyramid, pyramidLevel, canvas, canvasX, canvasY-pyramidTileEdge);
                         break;
                     }
                 }
@@ -156,6 +166,67 @@ public class Tile23 {
                   (System.nanoTime()-startNS)/1000000 + "ms");
         return reuse;
     }
+
+    // Render top 2/3 of the Pyramid, which will be square
+    private void renderTop(PyramidGrey23 pyramid, final int level, final int[] canvas,
+                           final int canvasOrigoX, final int canvasOrigoY) {
+        if (level == 0) {
+            pyramid.copyPixels(1, 0, 0, canvas, canvasOrigoX, canvasOrigoY, edge);
+            return;
+        }
+        final int pTileEdge = pyramid.getTileEdge(level);
+//        log.debug("Render pyramid(edge=" + pTileEdge + ") -> canvas(" + canvasOrigoX + ", " + canvasOrigoY + ")");
+
+        for (int fy = 0 ; fy < pyramid.getFractionWidth() ; fy++) {
+            for (int fx = 0; fx < pyramid.getFractionWidth(); fx++) {
+                pyramid.copyPixels(level, fx, fy, canvas, canvasOrigoX+fx*pTileEdge, canvasOrigoY+fy*pTileEdge, edge);
+            }
+        }
+    }
+
+    // Render bottom 2/3 of the Pyramid, which will be square
+    private void renderBottom(PyramidGrey23 pyramid, final int level, final int[] canvas,
+                              final int canvasOrigoX, final int canvasOrigoY) {
+        if (level == 0) {
+            pyramid.copyPixels(1, 0, 1, canvas, canvasOrigoX, canvasOrigoY, edge);
+            return;
+        }
+        final int pTileEdge = pyramid.getTileEdge(level);
+//        log.debug("Render pyramid(edge=" + pTileEdge + ") -> canvas(" + canvasOrigoX + ", " + canvasOrigoY + ")");
+
+        for (int fy = pyramid.getFractionHeight()-pyramid.getFractionWidth() ; fy < pyramid.getFractionHeight() ; fy++) {
+            for (int fx = 0; fx < pyramid.getFractionWidth(); fx++) {
+                pyramid.copyPixels(level, fx, fy, canvas, canvasOrigoX+fx*pTileEdge, canvasOrigoY+fy*pTileEdge, edge);
+            }
+        }
+    }
+
+    // Render bottom 1/3 of pyramidTop and top 1/3 of pyramidBottom, the result should be square
+    private void renderDual(PyramidGrey23 pyramidTop, PyramidGrey23 pyramidBottom, final int level, final int[] canvas,
+                              final int canvasOrigoX, final int canvasOrigoY) {
+        if (level == 0) {
+            pyramidTop.copyPixels(1, 0, 1, canvas, canvasOrigoX, canvasOrigoY, edge); // Should really be average
+            return;
+        }
+        final int pTileEdge = pyramidTop.getTileEdge(level);
+//        log.debug("Render pyramid(edge=" + pTileEdge + ") -> canvas(" + canvasOrigoX + ", " + canvasOrigoY + ")");
+        final int fw = pyramidTop.getFractionWidth();
+        final int fh = pyramidBottom.getFractionWidth();
+
+        // Bottom 1/3 of pyramidTop
+        for (int fy = fh-fw ; fy < fh ; fy++) {
+            for (int fx = 0; fx < fw; fx++) {
+                pyramidTop.copyPixels(level, fx, fy, canvas, canvasOrigoX+fx*pTileEdge, canvasOrigoY+fy*pTileEdge, edge);
+            }
+        }
+        // Top 1/3 of pyramidBottom
+        for (int fy = 0 ; fy < fh-fw ; fy++) {
+            for (int fx = 0; fx < fw; fx++) {
+                pyramidTop.copyPixels(level, fx, fy, canvas, canvasOrigoX+fx*pTileEdge, canvasOrigoY+fy*pTileEdge, edge);
+            }
+        }
+    }
+
 
     // Renders the 6 pyramid sub-tiles at the given position of the canvas
     private void render(PyramidGrey23 pyramid, final int level, final int[] canvas,
