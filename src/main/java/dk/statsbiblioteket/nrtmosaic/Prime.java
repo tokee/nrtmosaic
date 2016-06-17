@@ -17,6 +17,7 @@ package dk.statsbiblioteket.nrtmosaic;
 import org.apache.commons.logging.LogFactory;
 import org.apache.commons.logging.Log;
 
+import javax.imageio.IIOException;
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
@@ -32,6 +33,7 @@ public class Prime {
 
     private final Keeper keeper;
     private final TileProvider tileProvider;
+    private final int FIRST_BASIC_LEVEL;
     private final int LAST_BASIC_LEVEL;
     private final int LAST_RENDER_LEVEL;
     // Last level is REDIRECT
@@ -55,6 +57,7 @@ public class Prime {
         if (Config.getInt("pyramid.maxlevel") == 0) { // Ugly hack. We need to request Config before Keeper!
             throw new IllegalArgumentException("Config stated pyramid.maxlevel=0. This should be > 0");
         }
+        FIRST_BASIC_LEVEL = Config.getInt("prime.firstbasiclevel");
         LAST_BASIC_LEVEL = Config.getInt("prime.lastbasiclevel");
         LAST_RENDER_LEVEL = LAST_BASIC_LEVEL + Config.getInt("pyramid.maxlevel");
         CorpusCreator.generateCache();
@@ -94,7 +97,12 @@ public class Prime {
 
     // Topmost levels where NRTMosaic works as a plain image server
     private BufferedImage deepZoomBasic(String deepZoomSnippet, String gam, String cnt) throws IOException {
-        return ImageIO.read(new URL(toExternalURL(gam, cnt, deepZoomSnippet)));
+        URL external = new URL(toExternalURL(gam, cnt, deepZoomSnippet));
+        try {
+            return ImageIO.read(external);
+        } catch (IIOException e) {
+            throw new IIOException("Unable to read '" + external + "' as an image", e);
+        }
     }
 
     // Middle level where NRTMosaic renders tiles
@@ -109,7 +117,7 @@ public class Prime {
         Tile23 tile = tileProvider.getTile(toExternalURL(
                 gam, cnt, pre + "/" + LAST_BASIC_LEVEL + "/" + basicFX + "_" + basicFY + post));
 
-        // Upper left corner of the source tile, measured in global coordinates
+        // Upper left corner of the basic tile, measured in global coordinates
         final int origoFX = basicFX*zoomFactor;
         final int origoFY = basicFY*zoomFactor;
 
@@ -147,19 +155,29 @@ public class Prime {
         Tile23 tile = tileProvider.getTile(toExternalURL(
                 gam, cnt, pre + "/" + LAST_BASIC_LEVEL + "/" + basicFX + "_" + basicFY + post));
 
-        PyramidGrey23 pyramid = tile.getPyramid(renderFX, renderFY);
-        final String id = pyramid.getID().toHex();
+        final int basicOrigoFX = basicFX*zoomFactorToBasic;
+        final int basicOrigoFY = basicFY*zoomFactorToBasic;
+        PyramidGrey23 pyramid = tile.getPyramid(renderFX-basicOrigoFX, renderFY-basicOrigoFY);
         final int renderOrigoFX = renderFX*zoomFactorToRender;
         final int renderOrigoFY = renderFY*zoomFactorToRender;
         final int redirectFX = fx-renderOrigoFX;
         final int redirectFY = fy-renderOrigoFY;
         // /avis-show/symlinks/9/c/0/5/9c05d958-b616-47c1-9e4f-63ec2dd9429e.jp2_files/0/0_0.jpg
-        final String basicSnippet = "/avis-show/symlinks/" + id.substring(0, 1) + "/" + id.substring(1, 2) + "/" +
-                                    id.substring(2, 3) + "/" + id.substring(3, 4) + "/" + id.substring(0, 8) + "-" +
-                                    id.substring(8, 12) + "-" + id.substring(12, 16) + "-" + id.substring(16, 24) +
-                                    ".jp2_files/" + (level-LAST_RENDER_LEVEL) + "/" + redirectFX + "_" + redirectFY;
-        log.info("Resolved redirect to " + pyramid.getID() + " with deepzoom call " + basicSnippet);
+        final String basicSnippet = toBasicDeepzoomSnippet(pyramid, redirectFX, redirectFY, level);
+        log.info("Resolved redirect from " + pre + " " + fx + "x" + fy + ", level " + level + " to deepzoom call " +
+                 basicSnippet);
         return deepZoomBasic(basicSnippet, gam, cnt);
+    }
+
+    private String toBasicDeepzoomSnippet(PyramidGrey23 pyramid, int redirectFX, int redirectFY, int level) {
+        final String id = pyramid.getID().toHex();
+        return "/avis-show/symlinks/" + id.substring(0, 1) + "/" + id.substring(1, 2) + "/" +
+               id.substring(2, 3) + "/" + id.substring(3, 4) + "/" +
+               id.substring(0, 8) + "-" + id.substring(8, 12) + "-" +
+               id.substring(12, 16) + "-" + id.substring(16, 20) + "-" +
+               id.substring(20, 32) +
+               ".jp2_files/" + (level-LAST_RENDER_LEVEL+FIRST_BASIC_LEVEL) +
+               "/" + redirectFX + "_" + redirectFY + ".jpg";
     }
 
     private String toExternalURL(String gam, String cnt, String deepZoom) {

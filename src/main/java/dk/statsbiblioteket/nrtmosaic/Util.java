@@ -89,9 +89,10 @@ public class Util {
     public static void show(BufferedImage... images)  { // Debugging
         try {
             JDialog dialog = new JDialog();
-            dialog.setTitle("Image");
-            final int side = (int) Math.ceil(Math.sqrt(images.length));
-            dialog.getContentPane().setLayout(new GridLayout(side, side));
+            dialog.setTitle("Images");
+            final int width = Math.min(10, images.length);
+            final int height = (int) Math.ceil(1.0 * images.length / width);
+            dialog.getContentPane().setLayout(new GridLayout(height, width));
             for (BufferedImage image: images) {
                 dialog.getContentPane().add(new JLabel(new ImageIcon(image)));
             }

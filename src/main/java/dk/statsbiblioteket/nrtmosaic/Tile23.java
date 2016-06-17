@@ -40,7 +40,7 @@ public class Tile23 {
             return pyramids[y * edge + x];
         } catch (ArrayIndexOutOfBoundsException e) {
             throw new ArrayIndexOutOfBoundsException(
-                    "Out of bounds while requesting " + x + "x" + y + " from a tile of " + edge + "x" + edge);
+                    "OutOfBounds while requesting pyramid at " + x + "x" + y + " from a tile of " + edge + "x" + edge);
         }
     }
 
