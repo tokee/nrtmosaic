@@ -102,15 +102,23 @@ public class Prime {
             String pre, int fx, int fy, int level, String post, String gam, String cnt) {
         log.trace("Rendering tile for " + pre + ", " + fx + "x" + fy + ", level " + level);
         final int zoomFactor = (int) Math.pow(2, level - LAST_BASIC_LEVEL);
-        final int sourceFX = fx/zoomFactor;
-        final int sourceFY = fy/zoomFactor;
 
-        final int origoFX = sourceFX*zoomFactor;
-        final int origoFY = sourceFY*zoomFactor;
-        String external = toExternalURL(
-                gam, cnt, pre + "/" + LAST_BASIC_LEVEL + "/" + sourceFX + "_" + sourceFY + post);
-        Tile23 tile = tileProvider.getTile(external);
-        return tile.renderImage(fx - origoFX, fy - origoFY, level - LAST_BASIC_LEVEL + 1, null);
+        // Coordinates for the basic tile: ...3ec2dd9429e.jp2_files/LAST_BASIC_LEVEL/sourceFX_sourceFY
+        final int basicFX = fx/zoomFactor;
+        final int basicFY = fy/zoomFactor;
+        Tile23 tile = tileProvider.getTile(toExternalURL(
+                gam, cnt, pre + "/" + LAST_BASIC_LEVEL + "/" + basicFX + "_" + basicFY + post));
+
+        // Upper left corner of the source tile, measured in global coordinates
+        final int origoFX = basicFX*zoomFactor;
+        final int origoFY = basicFY*zoomFactor;
+
+        // Upper left corner of the wanted sub-tile, inside of the basic tile. With level having basic leves as origo
+        final int renderFX = fx-origoFX;
+        final int renderFY = fy-origoFY;
+        final int renderLevel = level - LAST_BASIC_LEVEL + 1;
+
+        return tile.renderImage(renderFX, renderFY, renderLevel, null);
 //            return TileProvider.getTileRender("/home/te/tmp/nrtmosaic/256/source_9c05d958-b616-47c1-9e4f-63ec2dd9429e_13_13_13.jpg", 0, 0, 1);
     }
 
@@ -121,25 +129,37 @@ public class Prime {
     // .jpg
 
     // Bottom level where NRTMosaic passes tiles from the image server for different images
-    private BufferedImage deepzoomRedirect(String pre, int fx, int fy, int level, String post, String gam, String cnt) {
-        log.trace("Redirecting tile for " + pre + ", " + fx + "x" + fy + ", level " + level);
-        Tile23 tile;
-        {
-            // Get render-tile
-            final int zoomFactor = (int) Math.pow(2, level - LAST_BASIC_LEVEL);
-            final int sourceFX = fx / zoomFactor;
-            final int sourceFY = fy / zoomFactor;
-            String external = toExternalURL(
-                    gam, cnt, pre + "/" + LAST_BASIC_LEVEL + "/" + sourceFX + "_" + sourceFY + post);
-            tile = tileProvider.getTile(external);
+    private BufferedImage deepzoomRedirect(String pre, int fx, int fy, int level, String post, String gam, String cnt)
+            throws IOException {
+        log.debug("Redirecting tile for " + pre + ", " + fx + "x" + fy + ", level " + level);
 
-            // Locate the right Pyramid in the Tile
-            final int origoFX = sourceFX * zoomFactor;
-            final int origoFY = sourceFY * zoomFactor;
+        final int zoomFactorToRender = (int) Math.pow(2, level - LAST_RENDER_LEVEL);
 
-        }
+        // Coordinates for the wanted Pyramid in the render tile
+        final int renderFX = fx/zoomFactorToRender;
+        final int renderFY = fy/zoomFactorToRender;
 
-        throw new UnsupportedOperationException("Level " + level + " zoom not implemented yet");
+        final int zoomFactorToBasic = (int) Math.pow(2, LAST_RENDER_LEVEL - LAST_BASIC_LEVEL);
+
+        // Coordinates for the basic tile: ...3ec2dd9429e.jp2_files/LAST_BASIC_LEVEL/sFX_sourceFY
+        final int basicFX = renderFX/zoomFactorToBasic;
+        final int basicFY = renderFY/zoomFactorToBasic;
+        Tile23 tile = tileProvider.getTile(toExternalURL(
+                gam, cnt, pre + "/" + LAST_BASIC_LEVEL + "/" + basicFX + "_" + basicFY + post));
+
+        PyramidGrey23 pyramid = tile.getPyramid(renderFX, renderFY);
+        final String id = pyramid.getID().toHex();
+        final int renderOrigoFX = renderFX*zoomFactorToRender;
+        final int renderOrigoFY = renderFY*zoomFactorToRender;
+        final int redirectFX = fx-renderOrigoFX;
+        final int redirectFY = fy-renderOrigoFY;
+        // /avis-show/symlinks/9/c/0/5/9c05d958-b616-47c1-9e4f-63ec2dd9429e.jp2_files/0/0_0.jpg
+        final String basicSnippet = "/avis-show/symlinks/" + id.substring(0, 1) + "/" + id.substring(1, 2) + "/" +
+                                    id.substring(2, 3) + "/" + id.substring(3, 4) + "/" + id.substring(0, 8) + "-" +
+                                    id.substring(8, 12) + "-" + id.substring(12, 16) + "-" + id.substring(16, 24) +
+                                    ".jp2_files/" + (level-LAST_RENDER_LEVEL) + "/" + redirectFX + "_" + redirectFY;
+        log.info("Resolved redirect to " + pyramid.getID() + " with deepzoom call " + basicSnippet);
+        return deepZoomBasic(basicSnippet, gam, cnt);
     }
 
     private String toExternalURL(String gam, String cnt, String deepZoom) {

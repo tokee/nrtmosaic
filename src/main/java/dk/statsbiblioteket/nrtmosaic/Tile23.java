@@ -36,7 +36,12 @@ public class Tile23 {
     }
 
     public PyramidGrey23 getPyramid(int x, int y) {
-        return pyramids[y*edge+x];
+        try {
+            return pyramids[y * edge + x];
+        } catch (ArrayIndexOutOfBoundsException e) {
+            throw new ArrayIndexOutOfBoundsException(
+                    "Out of bounds while requesting " + x + "x" + y + " from a tile of " + edge + "x" + edge);
+        }
     }
 
     /**
@@ -93,6 +98,7 @@ public class Tile23 {
      * @return a mosaic that should look approximately like the source at the given z level.
      */
     public BufferedImage renderImage(final int subTileX, final int subTileY, final int level, BufferedImage reuse) {
+        final long startNS = System.nanoTime();
         final int pyramidLevel = level-1;
         if (reuse == null) {
             reuse = new BufferedImage(edge, edge, BufferedImage.TYPE_BYTE_GRAY);
@@ -114,7 +120,7 @@ public class Tile23 {
 
         final int startX = subTileX*(edge>>shift);
         final int startY = subTileY*(edge>>shift);
-        final int zoomFactor = 1<<shift;
+//        final int zoomFactor = 1<<shift;
         final int levelEdge = edge>>shift ;
 //        log.debug("Rendering source cutout (" + startX + ", " + startY + "), (" +
 //                  (startX+levelEdge) + ", " + (startY+levelEdge) + ") with zoomFactor=" + zoomFactor +
@@ -146,6 +152,8 @@ public class Tile23 {
             }
         }
         reuse.getRaster().setPixels(0, 0, edge, edge, canvas);
+        log.trace("Rendered tile for " + subTileX + "x" + subTileY + ", level " + level + " in " +
+                  (System.nanoTime()-startNS)/1000000 + "ms");
         return reuse;
     }
 

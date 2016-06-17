@@ -33,7 +33,6 @@ public class NrtmosaicResourceTest {
                 "2", "3", "/avis-show/symlinks/9/c/0/5/9c05d958-b616-47c1-9e4f-63ec2dd9429e.jp2_files/9/1_1.jpg");
     }
 
-    @Test
     public void testExternalRender() throws ServiceException, IOException {
         String TILE = "/avis-show/symlinks/9/c/0/5/9c05d958-b616-47c1-9e4f-63ec2dd9429e.jp2_files/13/3_4.jpg";
         //String TILE = "/avis-show/symlinks/9/c/0/5/9c05d958-b616-47c1-9e4f-63ec2dd9429e.jp2_files/12/3_4.jpg";
@@ -41,8 +40,8 @@ public class NrtmosaicResourceTest {
 
         NrtmosaicResource resource = new NrtmosaicResource();
         BufferedImage source = ImageIO.read(new URL(external));
-        BufferedImage render = resource.checkRedirect("2", "3", TILE);
-        Util.show(source, render);
+//        BufferedImage render = resource.checkRedirect("2", "3", TILE);
+  //      Util.show(source, render);
     }
 
 

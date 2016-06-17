@@ -90,7 +90,8 @@ public class Util {
         try {
             JDialog dialog = new JDialog();
             dialog.setTitle("Image");
-            dialog.getContentPane().setLayout(new GridLayout(1, images.length));
+            final int side = (int) Math.ceil(Math.sqrt(images.length));
+            dialog.getContentPane().setLayout(new GridLayout(side, side));
             for (BufferedImage image: images) {
                 dialog.getContentPane().add(new JLabel(new ImageIcon(image)));
             }
