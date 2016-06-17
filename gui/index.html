@@ -16,7 +16,7 @@
 <script type="text/javascript">
     myDragon = OpenSeadragon({
     id: "zoom-display",
-    maxZoomLevel: 16384,
+//    maxZoomLevel: 16384,
     
     prefixUrl:     "images/",
 
@@ -31,8 +31,8 @@
         Overlap:  "0",
         TileSize: "256",
         Size: {
-            Width:  4881*256,
-            Height: 7531*256,
+            Width:  4881*Math.pow(2, 13),
+            Height: 7531*Math.pow(2, 13),
         }
     }
     }
