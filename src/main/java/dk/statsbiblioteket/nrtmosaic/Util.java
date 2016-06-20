@@ -130,4 +130,11 @@ public class Util {
 
         return bilinearScaleOp.filter(image, new BufferedImage(width, height, image.getType()));
     }
+
+    public static void drawBorder(BufferedImage image) {
+        Graphics g = image.getGraphics();
+        g.setColor(FILL_COLOR);
+        g.drawRect(0, 0, image.getWidth()-1, image.getHeight()-1);
+        g.dispose();
+    }
 }

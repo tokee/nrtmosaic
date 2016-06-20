@@ -70,9 +70,10 @@ public class Prime {
 
     private static final Pattern DEEPZOOM = Pattern.compile("(.*)/([0-9]+)/([0-9]+)_([0-9]+)(.*)");
     public BufferedImage deepzoom(String deepZoomSnippet, String gam, String cnt) throws IOException {
-        return deepzoom(deepZoomSnippet, gam, cnt, false);
+        return deepzoom(deepZoomSnippet, gam, cnt, false, false);
     }
-    private BufferedImage deepzoom(String deepZoomSnippet, String gam, String cnt, boolean pad) throws IOException {
+    private BufferedImage deepzoom(String deepZoomSnippet, String gam, String cnt, boolean pad, boolean border)
+            throws IOException {
 
         // /avis-show/symlinks/9/c/0/5/9c05d958-b616-47c1-9e4f-63ec2dd9429e.jp2_files/0/0_0.jpg
         // Group 1                                                                    2 3 45
@@ -92,12 +93,18 @@ public class Prime {
         final int fy = Integer.parseInt(deepMatch.group(4));
         final String post = deepMatch.group(5);
 
+        BufferedImage result;
         if (level > LAST_RENDER_LEVEL) {
-            return deepzoomRedirect(pre, fx, fy, level, post, gam, cnt);
+            result = deepzoomRedirect(pre, fx, fy, level, post, gam, cnt);
         } else if (level > LAST_BASIC_LEVEL) {
-            return deepzoomRender(pre, fx, fy, level, post, gam, cnt);
+            result = deepzoomRender(pre, fx, fy, level, post, gam, cnt);
+        } else {
+            result = deepZoomBasic(deepZoomSnippet, gam, cnt, pad);
         }
-        return deepZoomBasic(deepZoomSnippet, gam, cnt, pad);
+        if (border) {
+            Util.drawBorder(result);
+        }
+        return result;
     }
 
     // Topmost levels where NRTMosaic works as a plain image server
@@ -175,6 +182,7 @@ public class Prime {
         int redirectFX = fx-renderOrigoFX;
         int redirectFY = fy-renderOrigoFY;
 
+        boolean border = false;
         PyramidGrey23 pyramid;
         switch (pyramidY * 2 % 3) {
             case 0:  // Top-down
@@ -186,6 +194,7 @@ public class Prime {
                 log.info("Redirect getting middle from " + pyramidX + "x" + (pyramidY-1) + " to level " + basicLevel +
                                 " " + redirectFX + "x" + redirectFY);
                 pyramid = tile.getPyramid(pyramidX, pyramidY-1); // Just for now
+                border = true;
                 break;
             case 1: // Bottom up
                 log.info("Redirect getting bottom-up from " + pyramidX + "x" + pyramidY + " to level " + basicLevel +
@@ -200,7 +209,7 @@ public class Prime {
         final String basicSnippet = toBasicDeepzoomSnippet(pyramid, redirectFX, redirectFY, level);
         log.info("Resolved redirect from " + pre + " " + fx + "x" + fy + ", level " + level + " to deepzoom call " +
                  basicSnippet);
-        return deepzoom(basicSnippet, gam, cnt, true);
+        return deepzoom(basicSnippet, gam, cnt, true, border);
     }
 
     private String toBasicDeepzoomSnippet(PyramidGrey23 pyramid, int redirectFX, int redirectFY, int level) {
@@ -223,4 +232,5 @@ public class Prime {
     public TileProvider getTileProvider() {
         return tileProvider;
     }
+
 }
