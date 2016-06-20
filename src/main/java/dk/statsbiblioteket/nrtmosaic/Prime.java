@@ -55,7 +55,7 @@ public class Prime {
     }
 
     private Prime() {
-        log.info("Constructing Prime in thread " + Thread.currentThread().getId());
+        log.debug("Constructing Prime in thread " + Thread.currentThread().getId());
         long startTime = System.nanoTime();
         if (Config.getInt("pyramid.maxlevel") == 0) { // Ugly hack. We need to request Config before Keeper!
             throw new IllegalArgumentException("Config stated pyramid.maxlevel=0. This should be > 0");
@@ -198,18 +198,18 @@ public class Prime {
         PyramidGrey23 pyramid;
         switch (pyramidY * 2 % 3) {
             case 0:  // Top-down
-                log.info("Redirect getting top-down from " + pyramidX + "x" + pyramidY + " to level " + basicLevel +
+                log.debug("Redirect getting top-down from " + pyramidX + "x" + pyramidY + " to level " + basicLevel +
                          " " + redirectFX + "x" + redirectFY);
                 pyramid = tile.getPyramid(pyramidX, pyramidY);
                 break;
             case 2:  // Middle
                 redirectFY += basicHTiles;
                 if (redirectFY < basicVTiles) { // Bottom of top pyramid
-                    log.info("Redirect middle getting top-bottom from " + pyramidX + "x" + (pyramidY-1) + " to level " +
+                    log.debug("Redirect middle getting top-bottom from " + pyramidX + "x" + (pyramidY-1) + " to level " +
                              basicLevel + " " + redirectFX + "x" + redirectFY);
                     pyramid = tile.getPyramid(pyramidX, pyramidY+1);
                 } else { // Top of bottom pyramid
-                    log.info("Redirect middle getting bottom-top from " + pyramidX + "x" + (pyramidY+1) + " to level " +
+                    log.debug("Redirect middle getting bottom-top from " + pyramidX + "x" + (pyramidY+1) + " to level " +
                              basicLevel + " " + redirectFX + "x" + (redirectFY-basicVTiles));
                     pyramid = tile.getPyramid(pyramidX, pyramidY+1);
                     redirectFY -= basicVTiles;
@@ -218,7 +218,7 @@ public class Prime {
                 break;
             case 1: // Bottom up
                 redirectFY += basicVTiles-basicHTiles; // Upper part is already rendered
-                log.info("Redirect getting bottom-up from " + pyramidX + "x" + pyramidY + " to level " + basicLevel +
+                log.debug("Redirect getting bottom-up from " + pyramidX + "x" + pyramidY + " to level " + basicLevel +
                          " " + redirectFX + "x" + redirectFY);
                 pyramid = tile.getPyramid(pyramidX, pyramidY);
                 break;
