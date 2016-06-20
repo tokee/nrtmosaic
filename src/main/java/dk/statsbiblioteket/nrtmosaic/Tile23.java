@@ -256,7 +256,7 @@ public class Tile23 {
                                       canvasOrigoX+fx*pTileEdge, canvasOrigoY+(fy+height)*pTileEdge, edge);
             }
         }
-//        debugRect(canvas, canvasOrigoX, canvasOrigoY, canvasOrigoX+2*pTileEdge, canvasOrigoY+2*pTileEdge, 50);
+        //        debugRect(canvas, canvasOrigoX, canvasOrigoY, canvasOrigoX+2*pTileEdge, canvasOrigoY+2*pTileEdge, 50);
     }
 
 
