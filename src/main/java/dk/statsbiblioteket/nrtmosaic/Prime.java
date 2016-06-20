@@ -178,15 +178,18 @@ public class Prime {
         PyramidGrey23 pyramid;
         switch (pyramidY * 2 % 3) {
             case 0:  // Top-down
-                log.info("Redirect getting top-down from " + pyramidX + "x" + pyramidY + " level " + basicLevel);
+                log.info("Redirect getting top-down from " + pyramidX + "x" + pyramidY + " to level " + basicLevel +
+                         " " + redirectFX + "x" + redirectFY);
                 pyramid = tile.getPyramid(pyramidX, pyramidY);
                 break;
             case 2:  // Middle
-                log.info("Redirect getting middle from " + pyramidX + "x" + (pyramidY-1) + " level " + basicLevel);
+                log.info("Redirect getting middle from " + pyramidX + "x" + (pyramidY-1) + " to level " + basicLevel +
+                                " " + redirectFX + "x" + redirectFY);
                 pyramid = tile.getPyramid(pyramidX, pyramidY-1); // Just for now
                 break;
             case 1: // Bottom up
-                log.info("Redirect getting bottom-up from " + pyramidX + "x" + pyramidY + " level " + basicLevel);
+                log.info("Redirect getting bottom-up from " + pyramidX + "x" + pyramidY + " to level " + basicLevel +
+                         " " + redirectFX + "x" + redirectFY);
                 pyramid = tile.getPyramid(pyramidX, pyramidY);
                 break;
             default:
