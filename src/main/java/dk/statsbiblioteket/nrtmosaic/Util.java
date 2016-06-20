@@ -34,6 +34,7 @@ public class Util {
 
     // Used as background when the input image is not large enough
     public static final Color FILL_COLOR;
+    public static final Color DARK_GREY;
 
     public static int getAverageGrey(BufferedImage scaled) {
         long sum = 0 ;
@@ -50,6 +51,8 @@ public class Util {
     static {
         int grey = Config.getInt("tile.fillgrey");
         FILL_COLOR = new Color(grey, grey, grey);
+        int dark_grey = 50;
+        DARK_GREY = new Color(dark_grey, dark_grey, dark_grey);
     }
 
     // Tries local file, classloader and URL in that order
@@ -133,8 +136,9 @@ public class Util {
 
     public static void drawBorder(BufferedImage image) {
         Graphics g = image.getGraphics();
-        g.setColor(FILL_COLOR);
+        g.setColor(DARK_GREY);
         g.drawRect(0, 0, image.getWidth()-1, image.getHeight()-1);
+        g.drawRect(1, 1, image.getWidth()-3, image.getHeight()-3);
         g.dispose();
     }
 }
