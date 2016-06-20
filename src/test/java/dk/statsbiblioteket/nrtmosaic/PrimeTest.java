@@ -24,6 +24,13 @@ import static org.junit.Assert.*;
 public class PrimeTest {
 
     @Test
+    public void testKnownProblem() throws IOException {
+        String BASE = TileProviderTest.SAMPLE_1;
+        Prime.instance().deepzoom(String.format("%s/%d/%d_%d", BASE, 23, 2, 0), "2.0", "1.2");
+        Prime.instance().deepzoom(String.format("%s/%d/%d_%d", BASE, 23, 3, 0), "2.0", "1.2");
+    }
+
+    @Test
     public void testExperiment() throws IOException {
         // /avis-show/symlinks/9/c/0/5/9c05d958-b616-47c1-9e4f-63ec2dd9429e.jp2_files/0/0_0.jpg
         final String BASE = "/avis-show/symlinks/9/c/0/5/9c05d958-b616-47c1-9e4f-63ec2dd9429e.jp2_files/";

@@ -23,8 +23,8 @@ import java.io.IOException;
  */
 public class TileProviderTest {
 
-    private static final String SAMPLE_1 = "256/source_9c05d958-b616-47c1-9e4f-63ec2dd9429e_13_13_13.jpg";
-    private static final String SAMPLE_2 = "256/source_9c05d958-b616-47c1-9e4f-63ec2dd9429e_11_1_2.jpg";
+    public static final String SAMPLE_1 = "256/source_9c05d958-b616-47c1-9e4f-63ec2dd9429e_13_13_13.jpg";
+    public static final String SAMPLE_2 = "256/source_9c05d958-b616-47c1-9e4f-63ec2dd9429e_11_1_2.jpg";
     private static final String SAMPLE_W = "256/white.png";
     private static final String SAMPLE_B = "256/black.png";
     public static final int SCALE = 2;

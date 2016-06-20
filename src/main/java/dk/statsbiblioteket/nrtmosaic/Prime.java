@@ -114,6 +114,7 @@ public class Prime {
     // Topmost levels where NRTMosaic works as a plain image server
     private BufferedImage deepZoomBasic(String deepZoomSnippet, String gam, String cnt, boolean pad)
             throws IOException {
+        log.debug("deepzoom basic tile for " + deepZoomSnippet);
         URL external = new URL(toExternalURL(gam, cnt, deepZoomSnippet));
         try {
             BufferedImage unpadded = ImageIO.read(external);
@@ -130,7 +131,7 @@ public class Prime {
     // Middle level where NRTMosaic renders tiles
     private BufferedImage deepzoomRender(
             String pre, int fx, int fy, int level, String post, String gam, String cnt) {
-        log.trace("Rendering tile for " + pre + ", " + fx + "x" + fy + ", level " + level);
+        log.debug("deepzoom render tile for " + pre + ", " + fx + "x" + fy + ", level " + level);
         final int zoomFactor = (int) Math.pow(2, level - LAST_BASIC_LEVEL);
 
         // Coordinates for the basic tile: ...3ec2dd9429e.jp2_files/LAST_BASIC_LEVEL/sourceFX_sourceFY
@@ -161,7 +162,7 @@ public class Prime {
     // Bottom level where NRTMosaic passes tiles from the image server for different images
     private BufferedImage deepzoomRedirect(String pre, int fx, int fy, int level, String post, String gam, String cnt)
             throws IOException {
-        log.debug("Redirecting tile for " + pre + ", " + fx + "x" + fy + ", level " + level);
+        log.debug("deepzoom redirect tile for " + pre + ", " + fx + "x" + fy + ", level " + level);
 
         final int zoomFactorToRender = (int) Math.pow(2, level - LAST_RENDER_LEVEL);
 
@@ -227,7 +228,7 @@ public class Prime {
 
         // /avis-show/symlinks/9/c/0/5/9c05d958-b616-47c1-9e4f-63ec2dd9429e.jp2_files/0/0_0.jpg
         final String basicSnippet = toBasicDeepzoomSnippet(pyramid, redirectFX, redirectFY, level);
-        log.info("Resolved redirect from " + pre + " " + fx + "x" + fy + ", level " + level + " to deepzoom call " +
+        log.debug("Resolved redirect from " + pre + " " + fx + "x" + fy + ", level " + level + " to deepzoom call " +
                  basicSnippet);
         return deepzoom(basicSnippet, gam, cnt, true, border);
     }
