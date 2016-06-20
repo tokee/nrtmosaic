@@ -37,6 +37,8 @@ public class Prime {
     private final int LAST_BASIC_LEVEL;
     private final int LAST_RENDER_LEVEL;
     private final int edge;
+    private final int FW;
+    private final int FH;
     // Last level is REDIRECT
 
     private static Prime singleton;
@@ -65,6 +67,8 @@ public class Prime {
         keeper = new Keeper();
         tileProvider = new TileProvider(keeper);
         edge = Config.getInt("tile.edge");
+        FW = Config.imhotep.getFractionWidth();
+        FH = Config.imhotep.getFractionHeight();
         log.info("Prime constructed in " + (System.nanoTime()-startTime)/1000000 + "ms");
     }
 
@@ -179,6 +183,9 @@ public class Prime {
         final int renderOrigoFX = renderFX*zoomFactorToRender;
         final int renderOrigoFY = renderFY*zoomFactorToRender;
         final int basicLevel = level-LAST_RENDER_LEVEL+FIRST_BASIC_LEVEL;
+        final int basicHTiles = (int) Math.pow(2, level-LAST_RENDER_LEVEL);
+        final int basicVTiles = basicHTiles/FW*FH;
+
         int redirectFX = fx-renderOrigoFX;
         int redirectFY = fy-renderOrigoFY;
 
@@ -191,12 +198,21 @@ public class Prime {
                 pyramid = tile.getPyramid(pyramidX, pyramidY);
                 break;
             case 2:  // Middle
-                log.info("Redirect getting middle from " + pyramidX + "x" + (pyramidY-1) + " to level " + basicLevel +
-                                " " + redirectFX + "x" + redirectFY);
-                pyramid = tile.getPyramid(pyramidX, pyramidY-1); // Just for now
+                redirectFY += basicHTiles;
+                if (redirectFY < basicVTiles) { // Bottom of top pyramid
+                    log.info("Redirect middle getting top-bottom from " + pyramidX + "x" + (pyramidY-1) + " to level " +
+                             basicLevel + " " + redirectFX + "x" + redirectFY);
+                    pyramid = tile.getPyramid(pyramidX, pyramidY+1);
+                } else { // Top of bottom pyramid
+                    log.info("Redirect middle getting bottom-top from " + pyramidX + "x" + (pyramidY+1) + " to level " +
+                             basicLevel + " " + redirectFX + "x" + (redirectFY-basicVTiles));
+                    pyramid = tile.getPyramid(pyramidX, pyramidY+1);
+                    redirectFY -= basicVTiles;
+                }
                 border = true;
                 break;
             case 1: // Bottom up
+                redirectFY += basicVTiles-basicHTiles; // Upper part is already rendered
                 log.info("Redirect getting bottom-up from " + pyramidX + "x" + pyramidY + " to level " + basicLevel +
                          " " + redirectFX + "x" + redirectFY);
                 pyramid = tile.getPyramid(pyramidX, pyramidY);
