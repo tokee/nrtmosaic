@@ -51,7 +51,7 @@ public class Util {
     static {
         int grey = Config.getInt("tile.fillgrey");
         FILL_COLOR = new Color(grey, grey, grey);
-        int dark_grey = 50;
+        int dark_grey = Config.getInt("tile.debuggrey");
         DARK_GREY = new Color(dark_grey, dark_grey, dark_grey);
     }
 

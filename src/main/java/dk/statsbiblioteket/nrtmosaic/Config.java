@@ -14,13 +14,36 @@
  */
 package dk.statsbiblioteket.nrtmosaic;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Properties;
 
 public class Config {
-    private static final Map<String, Object> conf = new HashMap<>();
+    private static Log log = LogFactory.getLog(Config.class);
+    private static final String PROPS = "nrtmosaic.properties";
+    private static final Properties conf;
 
     static { // Default values
+        URL url = Thread.currentThread().getContextClassLoader().getResource(PROPS);
+        try {
+            if (url == null) {
+                throw new RuntimeException("Unable to locate properties '" + PROPS + "'");
+            }
+            try (InputStream is = url.openStream()) {
+                conf = new Properties();
+                conf.load(is);
+            }
+        } catch (Exception e) {
+            throw new RuntimeException("Unable to load properties from '" + url + "'", e);
+        }
+        /*
 //        conf.put("pyramid.source", "nrtmosaic/sources.dat"); // List of URLs to use as source
 //        conf.put("pyramid.cache", "nrtmosaic/cache");        // Where to store the cache
         conf.put("pyramid.source", "/home/te/tmp/nrtmosaic/sources.dat"); // List of URLs to use as source
@@ -30,25 +53,28 @@ public class Config {
         conf.put("prime.lastbasiclevel", 13);
         conf.put("pyramid.maxlevel", 8);
         conf.put("tile.fillgrey", 0xEE);
+        conf.put("tile.debuggrey", 0x99);
         conf.put("tile.edge", 256);
-        conf.put("tile.cachesize", 100);
+        conf.put("tile.cachesize", 100);*/
     }
 
     public static final PyramidGrey23 imhotep = new PyramidGrey23(CorpusCreator.MAX_LEVEL);
     public static Integer getInt(String key) {
-        return (Integer) conf.get(key);
+        return Integer.parseInt(conf.getProperty(key));
     }
     public static Long getLong(String key) {
-        return (Long) conf.get(key);
+        return Long.parseLong(conf.getProperty(key));
     }
     public static String getString(String key) {
-        return (String) conf.get(key);
+        return conf.getProperty(key);
     }
     public static Boolean getBool(String key) {
-        return (Boolean) conf.get(key);
+        return Boolean.parseBoolean(conf.getProperty(key));
     }
     public static Double getDouble(String key) {
-        return (Double) conf.get(key);
+        return Double.parseDouble(conf.getProperty(key));
     }
+
+
 
 }
