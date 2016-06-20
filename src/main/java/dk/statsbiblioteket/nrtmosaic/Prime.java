@@ -119,6 +119,10 @@ public class Prime {
             BufferedImage unpadded = ImageIO.read(external);
             return pad ? Util.pad(unpadded, edge, edge) : unpadded;
         } catch (IIOException e) {
+            if (pad) {
+                log.debug("No basic tile at '" + deepZoomSnippet + "' but pad==true so default blank is returned");
+                return Util.getBlankTile();
+            }
             throw new IIOException("Unable to read '" + external + "' as an image", e);
         }
     }
@@ -133,7 +137,7 @@ public class Prime {
         final int basicFX = fx/zoomFactor;
         final int basicFY = fy/zoomFactor;
         Tile23 tile = tileProvider.getTile(toExternalURL(
-                gam, cnt, pre + "/" + LAST_BASIC_LEVEL + "/" + basicFX + "_" + basicFY + post));
+                gam, cnt, pre + "/" + LAST_BASIC_LEVEL + "/" + basicFX + "_" + basicFY + post), true);
 
         // Upper left corner of the basic tile, measured in global coordinates
         final int origoFX = basicFX*zoomFactor;
@@ -171,7 +175,7 @@ public class Prime {
         final int basicFX = renderFX/zoomFactorToBasic;
         final int basicFY = renderFY/zoomFactorToBasic;
         Tile23 tile = tileProvider.getTile(toExternalURL(
-                gam, cnt, pre + "/" + LAST_BASIC_LEVEL + "/" + basicFX + "_" + basicFY + post));
+                gam, cnt, pre + "/" + LAST_BASIC_LEVEL + "/" + basicFX + "_" + basicFY + post), true);
 
         final int basicOrigoFX = basicFX*zoomFactorToBasic;
         final int basicOrigoFY = basicFY*zoomFactorToBasic;
@@ -209,7 +213,7 @@ public class Prime {
                     pyramid = tile.getPyramid(pyramidX, pyramidY+1);
                     redirectFY -= basicVTiles;
                 }
-                border = true;
+                //border = true; // Debugging
                 break;
             case 1: // Bottom up
                 redirectFY += basicVTiles-basicHTiles; // Upper part is already rendered

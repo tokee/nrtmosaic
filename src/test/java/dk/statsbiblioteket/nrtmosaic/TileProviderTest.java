@@ -31,12 +31,12 @@ public class TileProviderTest {
 
     @Test
     public void testSampleTileBasic() throws InterruptedException, IOException {
-        Prime.instance().getTileProvider().getTileRender(SAMPLE_1, 0, 0, 2);
+        Prime.instance().getTileProvider().getTileRender(SAMPLE_1, 0, 0, 2, false);
     }
 
     @Test
     public void testSampleTileOffset() throws InterruptedException, IOException {
-        Util.show(Prime.instance().getTileProvider().getTileRender(SAMPLE_2, 0, 0, 2));
+        Util.show(Prime.instance().getTileProvider().getTileRender(SAMPLE_2, 0, 0, 2, false));
     }
 
     @Test
@@ -51,7 +51,7 @@ public class TileProviderTest {
         dialog.getContentPane().add(new JLabel(scale(new ImageIcon(ImageIO.read(Util.resolveURL(original))))));
         for (int level = 1 ; level <= 9 ; level++) {
             dialog.getContentPane().add(new JLabel(scale(new ImageIcon(
-                    Prime.instance().getTileProvider().getTileRender(original, 0, 0, level)))));
+                    Prime.instance().getTileProvider().getTileRender(original, 0, 0, level, false)))));
         }
         dialog.setVisible(true);
         dialog.pack();

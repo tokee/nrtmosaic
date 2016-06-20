@@ -35,6 +35,7 @@ public class Util {
     // Used as background when the input image is not large enough
     public static final Color FILL_COLOR;
     public static final Color DARK_GREY;
+    private static final BufferedImage BLANK;
 
     public static int getAverageGrey(BufferedImage scaled) {
         long sum = 0 ;
@@ -53,6 +54,13 @@ public class Util {
         FILL_COLOR = new Color(grey, grey, grey);
         int dark_grey = Config.getInt("tile.debuggrey");
         DARK_GREY = new Color(dark_grey, dark_grey, dark_grey);
+
+        final int edge = Config.getInt("tile.edge");
+        BLANK = new BufferedImage(edge, edge, BufferedImage.TYPE_BYTE_GRAY);
+        Graphics g = BLANK.getGraphics();
+        g.setColor(FILL_COLOR);
+        g.fillRect(0, 0, edge, edge);
+        g.dispose();
     }
 
     // Tries local file, classloader and URL in that order
@@ -140,5 +148,9 @@ public class Util {
         g.drawRect(0, 0, image.getWidth()-1, image.getHeight()-1);
         g.drawRect(1, 1, image.getWidth()-3, image.getHeight()-3);
         g.dispose();
+    }
+
+    public static BufferedImage getBlankTile() {
+        return BLANK; // Bit dangerous as debug might modify this
     }
 }
