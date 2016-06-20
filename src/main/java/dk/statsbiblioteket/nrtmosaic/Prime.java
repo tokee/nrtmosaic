@@ -161,7 +161,12 @@ public class Prime {
 
         final int basicOrigoFX = basicFX*zoomFactorToBasic;
         final int basicOrigoFY = basicFY*zoomFactorToBasic;
-        PyramidGrey23 pyramid = tile.getPyramid(renderFX-basicOrigoFX, renderFY-basicOrigoFY);
+
+        // TODO: Mimick the logic from Tile23 renderTop, renderBottom and renderDual
+        final int pyramidX = renderFX-basicOrigoFX;
+        final int pyramidY = renderFY-basicOrigoFY;
+        PyramidGrey23 pyramid = tile.getPyramid(pyramidX, pyramidY);
+
         final int renderOrigoFX = renderFX*zoomFactorToRender;
         final int renderOrigoFY = renderFY*zoomFactorToRender;
         final int redirectFX = fx-renderOrigoFX;
