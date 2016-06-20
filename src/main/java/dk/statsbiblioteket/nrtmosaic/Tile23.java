@@ -134,14 +134,6 @@ public class Tile23 {
 //                log.debug("Rendering source(" + sourceX + ", " + sourceY + ") -> canvas(" +
 //                          canvasX + ", " + canvasY + ")");
                 switch (sourceY * 2 % 3) {
-                    case 2:   // None (1, 4, 7, 10...)
-                        final PyramidGrey23 pyramidTop = getPyramid(sourceX, sourceY-1);
-                        final PyramidGrey23 pyramidBottom = getPyramid(sourceX, sourceY+1);
-                        if (pyramidTop == null || pyramidBottom == null) {
-                            continue; // Bit dangerous as we do not discover if everything is null
-                        }
-                        renderDual(pyramidTop, pyramidBottom, pyramidLevel, canvas, canvasX, canvasY);
-                        break;
                     case 0: { // Top-down (0, 3, 6, 9...)
                         final PyramidGrey23 pyramid = getPyramid(sourceX, sourceY); // Will be null for y*2%3==2
                         if (pyramid == null) {
@@ -150,6 +142,14 @@ public class Tile23 {
                         renderTop(pyramid, pyramidLevel, canvas, canvasX, canvasY);
                         break;
                     }
+                    case 2:   // None (1, 4, 7, 10...)
+                        final PyramidGrey23 pyramidTop = getPyramid(sourceX, sourceY-1);
+                        final PyramidGrey23 pyramidBottom = getPyramid(sourceX, sourceY+1);
+                        if (pyramidTop == null || pyramidBottom == null) {
+                            continue; // Bit dangerous as we do not discover if everything is null
+                        }
+                        renderDual(pyramidTop, pyramidBottom, pyramidLevel, canvas, canvasX, canvasY);
+                        break;
                     case 1: { // Bottom-up (2, 5, 8, 11...)
                         final PyramidGrey23 pyramid = getPyramid(sourceX, sourceY); // Will be null for y*2%3==2
                         if (pyramid == null) {
