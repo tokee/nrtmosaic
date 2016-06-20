@@ -18,8 +18,9 @@
     id: "zoom-display",
 //    maxZoomLevel: 16384,
     zoomPerScroll: 2.0,
-    prefixUrl:     "images/",
+    debugMode: false,
 
+    prefixUrl:     "images/",
     showNavigator:  false,
     wrapHorizontal: false,
     
@@ -31,7 +32,7 @@
         Overlap:  "0",
         TileSize: "256",
         Size: {
-            Width:  4881*Math.pow(2, 26), // 13 = no recursion, 38 crashes
+            Width:  4881*Math.pow(2, 26), // 13 = no recursion, 26 = 2 levels, 28+ crashes
             Height: 7531*Math.pow(2, 26),
         }
     }
