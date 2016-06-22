@@ -19,6 +19,7 @@ import org.apache.commons.logging.Log;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.color.ColorSpace;
 import java.awt.geom.AffineTransform;
 import java.awt.image.AffineTransformOp;
 import java.awt.image.BufferedImage;
@@ -37,16 +38,30 @@ public class Util {
     public static final Color DARK_GREY;
     private static final BufferedImage BLANK;
 
-    public static int getAverageGrey(BufferedImage scaled) {
+    public static int getAverageGrey(BufferedImage image) {
+        return getAverageGrey(image, 0, 0, image.getWidth(), image.getHeight());
+    }
+
+    public static int getAverageGrey(BufferedImage image, int left, int top, int width, int height) {
         long sum = 0 ;
-        int w = scaled.getWidth();
-        int h = scaled.getHeight();
-        int[] pixels = new int[w*h];
-        scaled.getRaster().getPixels(0, 0, w, h, pixels);
-        for (int i = 0 ; i < w*h ; i++) {
+        int[] pixels = new int[width*height];
+        image.getRaster().getPixels(0, 0, width, height, pixels);
+        for (int i = 0 ; i < width*height ; i++) {
             sum += pixels[i];
         }
-        return (int) (sum / (w * h));
+        return (int) (sum / (width * height));
+    }
+
+    public static BufferedImage toGrey(BufferedImage image) {
+        if (image.getColorModel().getColorSpace().getType() == ColorSpace.TYPE_GRAY) {
+            log.trace("toGrey: Image already grey, returning unmodified");
+            return image;
+        }
+        BufferedImage grey = new BufferedImage(image.getWidth(), image.getHeight(), BufferedImage.TYPE_BYTE_GRAY);
+        Graphics g = grey.getGraphics();
+        g.drawImage(image, 0, 0, null);
+        g.dispose();
+        return grey;
     }
 
     static {
@@ -117,9 +132,18 @@ public class Util {
     }
 
     public static BufferedImage pad(BufferedImage image, int width, int height) {
+        return pad(image, width, height, FILL_COLOR.getRed());
+    }
+    public static BufferedImage pad(BufferedImage image, int width, int height, int fillGrey) {
+        final Color fill = new Color(fillGrey, fillGrey, fillGrey);
+        if (image.getWidth() == width && image.getHeight() == height &&
+            image.getColorModel().getColorSpace().getType() == ColorSpace.TYPE_GRAY) {
+            log.trace("pad: Image already grey and at size " + width + "x" + height + ", returning unmodified");
+            return image;
+        }
         BufferedImage full = new BufferedImage(width, height, BufferedImage.TYPE_BYTE_GRAY);
         Graphics g = full.getGraphics();
-        g.setColor(FILL_COLOR);
+        g.setColor(fill);
         g.fillRect(0, 0, full.getWidth(), full.getHeight());
         g.drawImage(image, 0, 0, null);
         g.dispose();
@@ -137,7 +161,7 @@ public class Util {
         double scaleX = (double)width/imageWidth;
         double scaleY = (double)height/imageHeight;
         AffineTransform scaleTransform = AffineTransform.getScaleInstance(scaleX, scaleY);
-        AffineTransformOp bilinearScaleOp = new AffineTransformOp(scaleTransform, AffineTransformOp.TYPE_BILINEAR);
+        AffineTransformOp bilinearScaleOp = new AffineTransformOp(scaleTransform, AffineTransformOp.TYPE_BICUBIC);
 
         return bilinearScaleOp.filter(image, new BufferedImage(width, height, image.getType()));
     }

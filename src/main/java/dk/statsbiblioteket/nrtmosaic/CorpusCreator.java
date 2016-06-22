@@ -56,7 +56,7 @@ public class CorpusCreator {
         cacheGenerated = true;
         final boolean overwrite = Config.getBool("corpuscreator.overwrite");
         final String sString = Config.getString("pyramid.source");
-        InputStream source = null;
+        InputStream source;
         try {
             source = Util.resolveURL(sString).openStream();
         } catch (IOException e) {
@@ -68,7 +68,7 @@ public class CorpusCreator {
         }
         int processed = 0;
         int created = 0;
-        Path dest = Paths.get(Config.getString("pyramid.cache"));
+        Path dest = Paths.get(Config.getString("pyramid.cache"), Config.getString("tile.fill.style"));
         try {
             log.debug("Retrieving raw corpus images from " + sString);
             BufferedReader in = new BufferedReader(new InputStreamReader(source, "utf-8"));
@@ -108,13 +108,16 @@ public class CorpusCreator {
 
     public PyramidGrey23 breakDownImage(URL in) throws IOException {
         UUID uuid = new UUID(in.toString());
-        // Write to 256x234 pixel grey image
-        BufferedImage full = renderToFull(ImageIO.read(in), Config.imhotep.getMaxTileLevel()); // Also does greyscale
-        return renderPyramid(uuid, full);
-    }
 
-    private PyramidGrey23 renderPyramid(UUID id, BufferedImage inImage) throws IOException {
-        final PyramidGrey23 pyramid = Config.imhotep.createNew(id);
+        final BufferedImage greyImage = Util.toGrey(ImageIO.read(in));
+        final int averageGrey = Util.getAverageGrey(greyImage);
+        final int edge = Config.imhotep.getTileEdge(Config.imhotep.getMaxTileLevel());
+        BufferedImage inImage = Util.pad(greyImage,
+                                         edge * Config.imhotep.getFractionWidth(),
+                                         edge * Config.imhotep.getFractionHeight(),
+                                         averageGrey);
+
+        final PyramidGrey23 pyramid = Config.imhotep.createNew(uuid);
         final int fw = pyramid.getFractionWidth();
         final int fh = pyramid.getFractionHeight();
         final int maxLevel = Config.imhotep.getMaxTileLevel();

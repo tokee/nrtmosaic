@@ -42,7 +42,7 @@ public class Keeper {
     }
 
     public Keeper() {
-        this(Paths.get(Config.getString("pyramid.cache")));
+        this(Paths.get(Config.getString("pyramid.cache"), Config.getString("tile.fill.style")));
     }
 
     // /tmp/pyramid_test1631652512768907712/ 02/ 82/ 02823b5f223a41249913985cb5ad815f.dat
