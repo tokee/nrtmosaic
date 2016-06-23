@@ -37,6 +37,10 @@ public class Util {
     public static final Color FILL_COLOR;
     public static final Color DARK_GREY;
     private static final BufferedImage BLANK;
+    public static enum FILL_STYLE {
+        fixed,  // Same grey for all tiles
+        average // Average for existing pixels for the full source image
+    }
 
     public static int getAverageGrey(BufferedImage image) {
         return getAverageGrey(image, 0, 0, image.getWidth(), image.getHeight());

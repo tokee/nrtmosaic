@@ -28,10 +28,17 @@ public class PyramidGrey23 {
     private final byte[] data;
     private final int origo;
     private final int maxTileLevel; // 1:1x1, 2:2x2, 4:4x4, 5:16x16, 6:32:32, 7:64x64, 8:128x128
-
     // Shared offsets for locating the right tiles in the data
     private static final int[] tileOffsets; // Offset is byte offset, aligned to mod 8
+
     private static final int[] tileEdges;
+
+    private static final int IDPART1_INDEX =      0;
+    private static final int IDPART2_INDEX =      IDPART1_INDEX+8;
+    private static final int AVERAGE_GREY_INDEX = IDPART2_INDEX+8;
+    private static final int WIDTH_INDEX =        AVERAGE_GREY_INDEX +1;
+    private static final int HEIGHT_INDEX =       WIDTH_INDEX+2;
+    private static final int TILE_START_INDEX =   HEIGHT_INDEX+2;
 
     static {
         tileOffsets = new int[18]; // Theoretically infinite, but we stop at 65K*65K pixel tiles
@@ -39,7 +46,7 @@ public class PyramidGrey23 {
         tileOffsets[0] = 0;  // Level 0: ID (128 bit / 16 bytes)
         tileEdges[0] = 0;
 
-        tileOffsets[1] = 16; // Level 1: 6*1*1
+        tileOffsets[1] = TILE_START_INDEX; //  Level 1: 6*1*1
         tileEdges[1] = 1;
         int lastSize = 1;
         for (int level = 2 ; level < tileOffsets.length-1 ; level++) {
@@ -90,11 +97,30 @@ public class PyramidGrey23 {
 
 
     public PyramidGrey23 setID(UUID id) {
-        setLong(0, id.getFirst64());
-        setLong(8, id.getSecond64());
+        setLong(IDPART1_INDEX, id.getFirst64());
+        setLong(IDPART2_INDEX, id.getSecond64());
         return this;
     }
+    public void setAverageGrey(int averageGrey) {
+        data[origo+ AVERAGE_GREY_INDEX] = (byte)averageGrey;
+    }
+    public void setSourceSize(int width, int height) {
+        setShort(WIDTH_INDEX, width);
+        setShort(HEIGHT_INDEX, height);
+    }
 
+    public void setShort(int offset, long value) {
+        for (int i = 0; i < 2; ++i) {
+          data[origo+offset+i] = (byte) (value >>> (8-i-1 << 3));
+        }
+    }
+    public short getShort(int offset) {
+        long value = 0;
+        for (int i = 0; i < 2; i++) {
+            value |= (long)(0xFF&data[origo+offset+i]) << (8-i-1 << 3);
+        }
+        return (short) value;
+    }
     public void setLong(int offset, long value) {
         for (int i = 0; i < 8; ++i) {
           data[origo+offset+i] = (byte) (value >>> (8-i-1 << 3));

@@ -18,7 +18,6 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import javax.imageio.ImageIO;
-import java.awt.*;
 import java.awt.image.*;
 import java.io.*;
 import java.net.URL;
@@ -33,6 +32,7 @@ public class CorpusCreator {
     private static boolean cacheGenerated = false;
 
     public static final int MAX_LEVEL = Config.getInt("pyramid.maxlevel"); // 128x128
+    public static final Util.FILL_STYLE fillStyle = Util.FILL_STYLE.valueOf(Config.getString("tile.fill.style"));
 
     public static void main(String[] argsA) throws IOException {
         List<String> args = Arrays.asList(argsA);
@@ -87,7 +87,12 @@ public class CorpusCreator {
                 }
                 PyramidGrey23 pyramid;
                 try {
-                    pyramid = cc.breakDownImage(Util.resolveURL(line));
+                    URL sourceURL = Util.resolveURL(line);
+                    if (sourceURL == null) {
+                        log.warn("Unable to resolve '" + line + "' to URL");
+                        continue;
+                    }
+                    pyramid = cc.breakDownImage(sourceURL);
                 } catch (Exception e) {
                     log.warn("Unable to create pyramid for " + line + ": " + e.getMessage());
                     continue;
@@ -111,13 +116,27 @@ public class CorpusCreator {
 
         final BufferedImage greyImage = Util.toGrey(ImageIO.read(in));
         final int averageGrey = Util.getAverageGrey(greyImage);
-        final int edge = Config.imhotep.getTileEdge(Config.imhotep.getMaxTileLevel());
-        BufferedImage inImage = Util.pad(greyImage,
-                                         edge * Config.imhotep.getFractionWidth(),
-                                         edge * Config.imhotep.getFractionHeight(),
-                                         averageGrey);
+        final int maxEdge = Config.imhotep.getTileEdge(Config.imhotep.getMaxTileLevel());
+        BufferedImage inImage;
+        switch (fillStyle) {
+            case fixed:
+                inImage = Util.pad(greyImage,
+                                   maxEdge * Config.imhotep.getFractionWidth(),
+                                   maxEdge * Config.imhotep.getFractionHeight());
+                break;
+            case average:
+                inImage = Util.pad(greyImage,
+                                   maxEdge * Config.imhotep.getFractionWidth(),
+                                   maxEdge * Config.imhotep.getFractionHeight(),
+                                   averageGrey);
+                break;
+            default:
+                throw new UnsupportedOperationException("Don't know how to handle fill style " + fillStyle);
+        }
 
         final PyramidGrey23 pyramid = Config.imhotep.createNew(uuid);
+        pyramid.setAverageGrey(averageGrey);
+        pyramid.setSourceSize(greyImage.getWidth(), greyImage.getHeight());
         final int fw = pyramid.getFractionWidth();
         final int fh = pyramid.getFractionHeight();
         final int maxLevel = Config.imhotep.getMaxTileLevel();
