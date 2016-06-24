@@ -4,6 +4,8 @@ import org.junit.Test;
 
 import java.awt.image.BufferedImage;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 import static org.junit.Assert.*;
 
@@ -22,6 +24,7 @@ import static org.junit.Assert.*;
  *
  */
 public class PrimeTest {
+    final String BASE = "/avis-show/symlinks/9/c/0/5/9c05d958-b616-47c1-9e4f-63ec2dd9429e.jp2_files/";
 
     @Test
     public void testKnownProblem() throws IOException {
@@ -33,7 +36,6 @@ public class PrimeTest {
     @Test
     public void testExperiment() throws IOException {
         // /avis-show/symlinks/9/c/0/5/9c05d958-b616-47c1-9e4f-63ec2dd9429e.jp2_files/0/0_0.jpg
-        final String BASE = "/avis-show/symlinks/9/c/0/5/9c05d958-b616-47c1-9e4f-63ec2dd9429e.jp2_files/";
         final int START = 12;
         final int END = 26;
 
@@ -47,10 +49,41 @@ public class PrimeTest {
         Util.show(tiles);
     }
 
+    // https://github.com/tokee/nrtmosaic/issues/11
+    @Test
+    public void testTileWrap23() throws IOException {
+        showSome(BASE, 23, 142, 236);
+    }
+
+    // https://github.com/tokee/nrtmosaic/issues/11
+    @Test
+    public void testTileWrap24() throws IOException {
+        showSome(BASE, 24, 0, 0);
+    }
+
+    @Test
+    public void testTileWrap11() throws IOException {
+        showSome(BASE, 11, 0, 4);
+    }
+    @Test
+    public void testTileWrap10() throws IOException {
+        showSome(BASE, 10, 0, 0);
+    }
+
+    private void showSome(String BASE, int level, int x, int y) throws IOException {
+        List<BufferedImage> tiles = new ArrayList<>();
+        for (int dy = 0; dy < 3; dy++) {
+            for (int dx = 0; dx < 6; dx++) {
+                tiles.add(Prime.instance().deepzoom(String.format(
+                        "%s/%d/%d_%d", BASE, level, x + dx, y + dy), "2.0", "1.2", true, false));
+            }
+        }
+        Util.show(tiles);
+    }
+
     @Test
     public void testKnownFail() throws IOException {
         // /avis-show/symlinks/9/c/0/5/9c05d958-b616-47c1-9e4f-63ec2dd9429e.jp2_files/0/0_0.jpg
-        final String BASE = "/avis-show/symlinks/9/c/0/5/9c05d958-b616-47c1-9e4f-63ec2dd9429e.jp2_files/";
         int c = 5120;
         Prime.instance().deepzoom(String.format("%s/%d/%d_%d", BASE, 22, c, c), "2.0", "1.2");
     }

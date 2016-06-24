@@ -122,7 +122,17 @@ public class Keeper {
         }
         return pyramid.getAverageGrey();
     }
-
+    public PyramidGrey23 getPyramid(String origin) {
+        try {
+            return getPyramid(new UUID(origin));
+        } catch (IllegalArgumentException e) {
+            log.warn("getPyramid(" + origin + "): Unable to extract UUID");
+        }
+        return null;
+    }
+    public PyramidGrey23 getPyramid(UUID id) {
+        return pyramids.get(id);
+    }
 
     private List<PyramidGrey23> getClosest(List<List<PyramidGrey23>> pyramids, final int ideal, Random random) {
         int delta = -1;

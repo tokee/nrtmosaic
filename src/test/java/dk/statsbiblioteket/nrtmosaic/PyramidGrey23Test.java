@@ -28,4 +28,18 @@ public class PyramidGrey23Test {
             assertEquals("The set value should be read back correctly", value, pyramid.getLong(2));
         }
     }
+
+    public void testWidthHeight() {
+        PyramidGrey23 pyramid = new PyramidGrey23(7);
+        pyramid.setSourceSize(1, 2);
+        assertEquals("Width should be as specified", 1, pyramid.getSourceWidth());
+        assertEquals("Height should be as specified", 2, pyramid.getSourceHeight());
+    }
+
+    public void testWidthHeightLarger() {
+        PyramidGrey23 pyramid = new PyramidGrey23(7);
+        pyramid.setSourceSize(257, 258);
+        assertEquals("Width should be as specified", 257, pyramid.getSourceWidth());
+        assertEquals("Height should be as specified", 258, pyramid.getSourceHeight());
+    }
 }

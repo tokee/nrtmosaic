@@ -108,25 +108,26 @@ public class PyramidGrey23 {
         return 0xFF & data[origo+ AVERAGE_GREY_INDEX];
     }
     public void setSourceSize(int width, int height) {
+        log.trace("Setting source size " + width + "x" + height);
         setShort(WIDTH_INDEX, width);
         setShort(HEIGHT_INDEX, height);
     }
     public int getSourceWidth() {
-        return 0xFF & data[origo + WIDTH_INDEX];
+        return getShort(WIDTH_INDEX);
     }
     public int getSourceHeight() {
-        return 0xFF & data[origo + HEIGHT_INDEX];
+        return getShort(HEIGHT_INDEX);
     }
 
-    public void setShort(int offset, long value) {
+    private void setShort(int offset, long value) {
         for (int i = 0; i < 2; ++i) {
-          data[origo+offset+i] = (byte) (value >>> (8-i-1 << 3));
+          data[origo+offset+i] = (byte) (value >>> (2-i-1 << 3));
         }
     }
-    public short getShort(int offset) {
+    private short getShort(int offset) {
         long value = 0;
         for (int i = 0; i < 2; i++) {
-            value |= (long)(0xFF&data[origo+offset+i]) << (8-i-1 << 3);
+            value |= (long)(0xFF&data[origo+offset+i]) << (2-i-1 << 3);
         }
         return (short) value;
     }

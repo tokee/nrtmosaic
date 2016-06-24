@@ -97,7 +97,7 @@ public class CorpusCreator {
                     log.warn("Unable to create pyramid for " + line + ": " + e.getMessage());
                     continue;
                 }
-                pyramid.store(dest);
+                pyramid.store(dest, overwrite);
                 created++;
             }
         } catch (UnsupportedEncodingException e) {

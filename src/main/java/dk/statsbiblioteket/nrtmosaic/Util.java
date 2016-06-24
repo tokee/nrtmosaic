@@ -126,11 +126,14 @@ public class Util {
     }
 
 
+    public static void show(java.util.List<BufferedImage> images) { // Debugging
+        show(images.toArray(new BufferedImage[images.size()]));
+    }
     public static void show(BufferedImage... images)  { // Debugging
         try {
             JDialog dialog = new JDialog();
             dialog.setTitle("Images");
-            final int width = Math.min(10, images.length);
+            final int width = Math.min(6, images.length);
             final int height = (int) Math.ceil(1.0 * images.length / width);
             dialog.getContentPane().setLayout(new GridLayout(height, width));
             for (BufferedImage image: images) {

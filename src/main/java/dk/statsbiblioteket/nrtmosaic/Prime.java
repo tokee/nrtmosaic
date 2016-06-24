@@ -33,7 +33,7 @@ public class Prime {
 
     private final Keeper keeper;
     private final TileProvider tileProvider;
-    private final int FIRST_BASIC_LEVEL;
+    private final int FIRST_BASIC_LEVEL; // 8 at Statsbiblioteket
     private final int LAST_BASIC_LEVEL;
     private final int LAST_RENDER_LEVEL;
     private final int edge;
@@ -76,7 +76,7 @@ public class Prime {
     public BufferedImage deepzoom(String deepZoomSnippet, String gam, String cnt) throws IOException {
         return deepzoom(deepZoomSnippet, gam, cnt, false, false);
     }
-    private BufferedImage deepzoom(String deepZoomSnippet, String gam, String cnt, boolean pad, boolean border)
+    public BufferedImage deepzoom(String deepZoomSnippet, String gam, String cnt, boolean pad, boolean border)
             throws IOException {
 
         // /avis-show/symlinks/9/c/0/5/9c05d958-b616-47c1-9e4f-63ec2dd9429e.jp2_files/0/0_0.jpg
@@ -103,7 +103,7 @@ public class Prime {
         } else if (level > LAST_BASIC_LEVEL) {
             result = deepzoomRender(pre, fx, fy, level, post, gam, cnt);
         } else {
-            result = deepZoomBasic(deepZoomSnippet, gam, cnt, pad);
+            result = deepZoomBasic(deepZoomSnippet, fx, fy, level, gam, cnt, pad);
         }
         if (border) {
             Util.drawBorder(result);
@@ -112,9 +112,30 @@ public class Prime {
     }
 
     // Topmost levels where NRTMosaic works as a plain image server
-    private BufferedImage deepZoomBasic(String deepZoomSnippet, String gam, String cnt, boolean pad)
-            throws IOException {
+    private BufferedImage deepZoomBasic(String deepZoomSnippet, int fx, int fy, int level, String gam, String cnt,
+                                        boolean pad) throws IOException {
         log.debug("deepzoom basic tile for " + deepZoomSnippet + ", pad=" + pad);
+        PyramidGrey23 pyramid = keeper.getPyramid(deepZoomSnippet);
+
+        if (pyramid != null) { // Check if the wanted tile is outside of the image pixels
+            final int sourceW = pyramid.getSourceWidth();
+            final int sourceH = pyramid.getSourceHeight();
+            if (sourceW == 0 || pyramid.getSourceHeight() == 0) {
+                log.warn("The pyramid for " + deepZoomSnippet + " has cached dimensions " + sourceW + "x" + sourceH);
+            }
+            final int zoomFactor = (int) (Math.pow(2, level - FIRST_BASIC_LEVEL));
+            int maxExistingX = zoomFactor * sourceW / Util.EDGE;
+            int maxExistingY = zoomFactor * sourceH / Util.EDGE;
+/*        log.info(fx + "x" + fy + " at level " + level + ": level-FBL=" + (level-FIRST_BASIC_LEVEL) + ", p.sw=" +
+                 sourceW + ", EDGE=" + Util.EDGE + ", 2^(l-FBL)=" + Math.pow(2, level-FIRST_BASIC_LEVEL) +
+                 ", 2^(l-FBL)*p.sw=" + (Math.pow(2, level - FIRST_BASIC_LEVEL) * pyramid.getSourceWidth()) +
+                 ", maxExistingX=" + maxExistingX);*/
+            if (fx > maxExistingX || fy > maxExistingY) {
+                log.trace("Basic image has no tile for " + fx + "x" + fy + " at level " + level + ". Returning blank");
+                return Util.getBlankTile(keeper.getFillGrey(deepZoomSnippet));
+            }
+        }
+
         URL external = new URL(toExternalURL(gam, cnt, deepZoomSnippet));
         try {
             BufferedImage unpadded = ImageIO.read(external);
