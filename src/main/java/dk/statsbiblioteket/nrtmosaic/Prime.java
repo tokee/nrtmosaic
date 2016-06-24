@@ -114,7 +114,7 @@ public class Prime {
     // Topmost levels where NRTMosaic works as a plain image server
     private BufferedImage deepZoomBasic(String deepZoomSnippet, String gam, String cnt, boolean pad)
             throws IOException {
-        log.debug("deepzoom basic tile for " + deepZoomSnippet);
+        log.debug("deepzoom basic tile for " + deepZoomSnippet + ", pad=" + pad);
         URL external = new URL(toExternalURL(gam, cnt, deepZoomSnippet));
         try {
             BufferedImage unpadded = ImageIO.read(external);
@@ -125,7 +125,7 @@ public class Prime {
         } catch (IIOException e) {
             if (pad) {
                 log.debug("No basic tile at '" + deepZoomSnippet + "' but pad==true so default blank is returned");
-                return Util.getBlankTile();
+                return Util.getBlankTile(keeper.getFillGrey(deepZoomSnippet));
             }
             throw new IIOException("Unable to read '" + external + "' as an image", e);
         }
