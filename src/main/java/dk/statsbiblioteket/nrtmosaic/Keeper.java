@@ -33,6 +33,7 @@ public class Keeper {
     // TODO: This could be much more efficiently packed as just a single byte[]
     private final List<List<PyramidGrey23>> pyramidsTop = new ArrayList<>(256);
     private final List<List<PyramidGrey23>> pyramidsBottom = new ArrayList<>(256);
+    private final Map<UUID, PyramidGrey23> pyramids = new HashMap<>();
 
     {
         for (int i = 0 ; i < 256 ; i++) {
@@ -94,6 +95,35 @@ public class Keeper {
         return candidates.get(random.nextInt(candidates.size())); // TODO: Should prioritize secondary
     }
 
+    // Attempts to extract UUID from origin and use cached fill color
+    public int getFillGrey(String origin) {
+        if (Util.DEFAULT_FILL_STYLE == Util.FILL_STYLE.fixed) {
+            return Util.FILL_COLOR_INT;
+        }
+        try {
+            return getFillGrey(new UUID(origin));
+        } catch (IllegalArgumentException e) {
+            log.warn("Unable to extract UUID from '" + origin + "'. Using default fill grey " + Util.FILL_COLOR_INT);
+        }
+        return Util.FILL_COLOR_INT;
+    }
+    /**
+     * Depending on property "tile.fill.style", this either returns the average grey for th pyramid or the default fill.
+     * @return average grey for the pyramid or default fill.
+     */
+    public int getFillGrey(UUID pyramidID) {
+        if (Util.DEFAULT_FILL_STYLE == Util.FILL_STYLE.fixed) {
+            return Util.FILL_COLOR_INT;
+        }
+        PyramidGrey23 pyramid = pyramids.get(pyramidID);
+        if (pyramid == null) {
+            log.debug("Could not resolve Pyramid for " + pyramidID + ", returning default grey " + Util.FILL_COLOR_INT);
+            return Util.FILL_COLOR_INT;
+        }
+        return pyramid.getAverageGrey();
+    }
+
+
     private List<PyramidGrey23> getClosest(List<List<PyramidGrey23>> pyramids, final int ideal, Random random) {
         int delta = -1;
         while (delta++ < 512) { // Linear search out from origo
@@ -121,6 +151,7 @@ public class Keeper {
         }
         pyramidsTop.get(pyramid.getTopPrimary()).add(pyramid);
         pyramidsBottom.get(pyramid.getBottomPrimary()).add(pyramid);
+        pyramids.put(pyramid.getID(), pyramid);
         log.trace("Loaded #" + size() + " " + pyramid);
     }
 

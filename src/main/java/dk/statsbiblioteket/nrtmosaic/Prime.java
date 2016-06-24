@@ -118,7 +118,10 @@ public class Prime {
         URL external = new URL(toExternalURL(gam, cnt, deepZoomSnippet));
         try {
             BufferedImage unpadded = ImageIO.read(external);
-            return pad ? Util.pad(unpadded, edge, edge) : unpadded;
+            if (!pad) {
+                return unpadded;
+            }
+            return Util.pad(unpadded, edge, edge, keeper.getFillGrey(deepZoomSnippet));
         } catch (IIOException e) {
             if (pad) {
                 log.debug("No basic tile at '" + deepZoomSnippet + "' but pad==true so default blank is returned");
@@ -198,19 +201,19 @@ public class Prime {
         PyramidGrey23 pyramid;
         switch (pyramidY * 2 % 3) {
             case 0:  // Top-down
-                log.debug("Redirect getting top-down from " + pyramidX + "x" + pyramidY + " to level " + basicLevel +
-                         " " + redirectFX + "x" + redirectFY);
+                log.trace("Redirect getting top-down from " + pyramidX + "x" + pyramidY + " to level " + basicLevel +
+                          " " + redirectFX + "x" + redirectFY);
                 pyramid = tile.getPyramid(pyramidX, pyramidY);
                 break;
             case 2:  // Middle
                 redirectFY += basicHTiles;
                 if (redirectFY < basicVTiles) { // Bottom of top pyramid
-                    log.debug("Redirect middle getting top-bottom from " + pyramidX + "x" + (pyramidY-1) + " to level " +
-                             basicLevel + " " + redirectFX + "x" + redirectFY);
+                    log.trace("Redirect middle getting top-bottom from " + pyramidX + "x" + (pyramidY-1) + " to level " +
+                              basicLevel + " " + redirectFX + "x" + redirectFY);
                     pyramid = tile.getPyramid(pyramidX, pyramidY+1);
                 } else { // Top of bottom pyramid
-                    log.debug("Redirect middle getting bottom-top from " + pyramidX + "x" + (pyramidY+1) + " to level " +
-                             basicLevel + " " + redirectFX + "x" + (redirectFY-basicVTiles));
+                    log.trace("Redirect middle getting bottom-top from " + pyramidX + "x" + (pyramidY+1) + " to level " +
+                              basicLevel + " " + redirectFX + "x" + (redirectFY-basicVTiles));
                     pyramid = tile.getPyramid(pyramidX, pyramidY+1);
                     redirectFY -= basicVTiles;
                 }
@@ -218,8 +221,8 @@ public class Prime {
                 break;
             case 1: // Bottom up
                 redirectFY += basicVTiles-basicHTiles; // Upper part is already rendered
-                log.debug("Redirect getting bottom-up from " + pyramidX + "x" + pyramidY + " to level " + basicLevel +
-                         " " + redirectFX + "x" + redirectFY);
+                log.trace("Redirect getting bottom-up from " + pyramidX + "x" + pyramidY + " to level " + basicLevel +
+                          " " + redirectFX + "x" + redirectFY);
                 pyramid = tile.getPyramid(pyramidX, pyramidY);
                 break;
             default:
@@ -228,7 +231,7 @@ public class Prime {
 
         // /avis-show/symlinks/9/c/0/5/9c05d958-b616-47c1-9e4f-63ec2dd9429e.jp2_files/0/0_0.jpg
         final String basicSnippet = toBasicDeepzoomSnippet(pyramid, redirectFX, redirectFY, level);
-        log.debug("Resolved redirect from " + pre + " " + fx + "x" + fy + ", level " + level + " to deepzoom call " +
+        log.debug("deepzoom redirect from " + pre + " " + fx + "x" + fy + ", level " + level + " to deepzoom " +
                  basicSnippet);
         return deepzoom(basicSnippet, gam, cnt, true, border);
     }

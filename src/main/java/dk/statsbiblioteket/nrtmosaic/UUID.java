@@ -25,8 +25,13 @@ public class UUID {
     }
 
     // Tries to locate an 128bit ID, represented as 32 hex sigits, is the input
+
+    /**
+     * Attempts to extract an 128bit ID, represented as 32 hex digits, from the input.
+     * @param name a String representation of the resource.
+     */
     public UUID(String name) {
-        String normalised = name.toLowerCase().replace("-", "").replace("_", "");
+        String normalised = name.toLowerCase().replace("-", "");
         Matcher matcher = hex32.matcher(normalised);
         if (!matcher.find()) {
             throw new IllegalArgumentException("Unable to extract 32 digit hex from '" + name + "'");
@@ -55,5 +60,25 @@ public class UUID {
             in = "0" + in;
         }
         return in;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        UUID uuid = (UUID) o;
+        return first64 == uuid.first64 && second64 == uuid.second64;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = (int) (first64 ^ (first64 >>> 32));
+        result = 31 * result + (int) (second64 ^ (second64 >>> 32));
+        return result;
+    }
+
+    @Override
+    public String toString() {
+        return "UUID(" + toHex() + ")";
     }
 }

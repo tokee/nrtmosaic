@@ -35,12 +35,15 @@ public class Util {
 
     // Used as background when the input image is not large enough
     public static final Color FILL_COLOR;
+    public static final int FILL_COLOR_INT;
     public static final Color DARK_GREY;
-    private static final BufferedImage BLANK;
-    public static enum FILL_STYLE {
+    private static final BufferedImage DEFAULT_BLANK;
+    public enum FILL_STYLE {
         fixed,  // Same grey for all tiles
         average // Average for existing pixels for the full source image
     }
+    public static final FILL_STYLE  DEFAULT_FILL_STYLE;
+    public static final int EDGE;
 
     public static int getAverageGrey(BufferedImage image) {
         return getAverageGrey(image, 0, 0, image.getWidth(), image.getHeight());
@@ -69,17 +72,24 @@ public class Util {
     }
 
     static {
-        int grey = Config.getInt("tile.fillgrey");
-        FILL_COLOR = new Color(grey, grey, grey);
+        DEFAULT_FILL_STYLE = FILL_STYLE.valueOf(Config.getString("tile.fill.style"));
+        FILL_COLOR_INT = Config.getInt("tile.fillgrey");
+        FILL_COLOR = new Color(FILL_COLOR_INT, FILL_COLOR_INT, FILL_COLOR_INT);
         int dark_grey = Config.getInt("tile.debuggrey");
         DARK_GREY = new Color(dark_grey, dark_grey, dark_grey);
 
-        final int edge = Config.getInt("tile.edge");
-        BLANK = new BufferedImage(edge, edge, BufferedImage.TYPE_BYTE_GRAY);
-        Graphics g = BLANK.getGraphics();
-        g.setColor(FILL_COLOR);
-        g.fillRect(0, 0, edge, edge);
+        EDGE = Config.getInt("tile.edge");
+        DEFAULT_BLANK = createBlank(EDGE, EDGE, FILL_COLOR_INT);
+    }
+
+    private static BufferedImage createBlank(int width, int height, int fillGrey) {
+        Color grey = new Color(fillGrey, fillGrey, fillGrey);
+        BufferedImage image = new BufferedImage(width, height, BufferedImage.TYPE_BYTE_GRAY);
+        Graphics g = image.getGraphics();
+        g.setColor(grey);
+        g.fillRect(0, 0, width, height);
         g.dispose();
+        return image;
     }
 
     // Tries local file, classloader and URL in that order
@@ -179,6 +189,9 @@ public class Util {
     }
 
     public static BufferedImage getBlankTile() {
-        return BLANK; // Bit dangerous as debug might modify this
+        return DEFAULT_BLANK; // Bit dangerous as debug might modify this BufferedImage
+    }
+    public static BufferedImage getBlankTile(int fillGrey) {
+        return FILL_COLOR_INT == fillGrey ? DEFAULT_BLANK : createBlank(EDGE, EDGE, fillGrey);
     }
 }

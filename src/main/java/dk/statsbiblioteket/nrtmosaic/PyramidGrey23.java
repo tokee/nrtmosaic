@@ -104,9 +104,18 @@ public class PyramidGrey23 {
     public void setAverageGrey(int averageGrey) {
         data[origo+ AVERAGE_GREY_INDEX] = (byte)averageGrey;
     }
+    public int getAverageGrey() {
+        return 0xFF & data[origo+ AVERAGE_GREY_INDEX];
+    }
     public void setSourceSize(int width, int height) {
         setShort(WIDTH_INDEX, width);
         setShort(HEIGHT_INDEX, height);
+    }
+    public int getSourceWidth() {
+        return 0xFF & data[origo + WIDTH_INDEX];
+    }
+    public int getSourceHeight() {
+        return 0xFF & data[origo + HEIGHT_INDEX];
     }
 
     public void setShort(int offset, long value) {

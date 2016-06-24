@@ -60,7 +60,7 @@ public class TileProvider {
     /**
      * Resolve a Tile for the source, mapping the source to Pyramids if not already cached.
      * @param source an image, expected to be edge*edge pixels, but padding will be applied if too small.
-     * @param allowNA allow non-existing sources, in which case a tile with default background will be used.
+     * @param allowNA allow non-existing sources, in which case a blank tile will be generated.
      * @return a Tile that should look render approximately like the source at the given z level.
      */
     public Tile23 getTile(String source, boolean allowNA) {
@@ -79,15 +79,16 @@ public class TileProvider {
         } catch (IOException e) {
             if (allowNA) {
                 log.debug("No tile at '" + source + "' but allowNA==true so default blank is used");
-                image = Util.getBlankTile();
+                image = Util.getBlankTile(keeper.getFillGrey(imageURL.toString()));
             } else {
                 throw new RuntimeException("Unable to resolve tile for source=" + source);
             }
         }
         if (image.getWidth() != edge || image.getHeight() != edge) {
+            int fillGrey = keeper.getFillGrey(imageURL.toString());
             log.trace("Padding tile '" + source + "' of " + image.getWidth() + "x" + image.getHeight() +
-                      " pixels to " + edge + "x" + edge + " pixels");
-            image = Util.pad(image, edge, edge);
+                      " pixels to " + edge + "x" + edge + " pixels with fill " + fillGrey);
+            image = Util.pad(image, edge, edge, fillGrey);
         }
         tile = Tile23.createTile(image, keeper);
         tileCache.put(source, tile);

@@ -75,6 +75,4 @@ public class Config {
         return Double.parseDouble(conf.getProperty(key));
     }
 
-
-
 }
