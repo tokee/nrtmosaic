@@ -39,6 +39,9 @@ public class Prime {
     private final int edge;
     private final int FW;
     private final int FH;
+
+    private final String IMAGE_SERVER;
+    private final String IMAGE_SERVER_EXTENSION;
     // Last level is REDIRECT
 
     private static Prime singleton;
@@ -69,6 +72,8 @@ public class Prime {
         edge = Config.getInt("tile.edge");
         FW = Config.imhotep.getFractionWidth();
         FH = Config.imhotep.getFractionHeight();
+        IMAGE_SERVER = Config.getString("imageserver");
+        IMAGE_SERVER_EXTENSION = Config.getString("imageserver.extension");
         log.info("Prime constructed in " + (System.nanoTime()-startTime)/1000000 + "ms");
     }
 
@@ -208,12 +213,12 @@ public class Prime {
             case 2:  // Middle
                 redirectFY += basicHTiles;
                 if (redirectFY < basicVTiles) { // Bottom of top pyramid
-                    log.trace("Redirect middle getting top-bottom from " + pyramidX + "x" + (pyramidY-1) + " to level " +
+                    log.trace("Redirect middle getting top-bottom from " + pyramidX + "x" + (pyramidY - 1) + " to level " +
                               basicLevel + " " + redirectFX + "x" + redirectFY);
                     pyramid = tile.getPyramid(pyramidX, pyramidY+1);
                 } else { // Top of bottom pyramid
-                    log.trace("Redirect middle getting bottom-top from " + pyramidX + "x" + (pyramidY+1) + " to level " +
-                              basicLevel + " " + redirectFX + "x" + (redirectFY-basicVTiles));
+                    log.trace("Redirect middle getting bottom-top from " + pyramidX + "x" + (pyramidY + 1) + " to level " +
+                              basicLevel + " " + redirectFX + "x" + (redirectFY - basicVTiles));
                     pyramid = tile.getPyramid(pyramidX, pyramidY+1);
                     redirectFY -= basicVTiles;
                 }
@@ -232,23 +237,22 @@ public class Prime {
         // /avis-show/symlinks/9/c/0/5/9c05d958-b616-47c1-9e4f-63ec2dd9429e.jp2_files/0/0_0.jpg
         final String basicSnippet = toBasicDeepzoomSnippet(pyramid, redirectFX, redirectFY, level);
         log.debug("deepzoom redirect from " + pre + " " + fx + "x" + fy + ", level " + level + " to deepzoom " +
-                 basicSnippet);
+                  basicSnippet);
         return deepzoom(basicSnippet, gam, cnt, true, border);
     }
 
     private String toBasicDeepzoomSnippet(PyramidGrey23 pyramid, int redirectFX, int redirectFY, int level) {
         final String id = pyramid.getID().toHex();
-        return "/avis-show/symlinks/" + id.substring(0, 1) + "/" + id.substring(1, 2) + "/" +
-               id.substring(2, 3) + "/" + id.substring(3, 4) + "/" +
-               id.substring(0, 8) + "-" + id.substring(8, 12) + "-" +
-               id.substring(12, 16) + "-" + id.substring(16, 20) + "-" +
-               id.substring(20, 32) +
-               ".jp2_files/" + (level-LAST_RENDER_LEVEL+FIRST_BASIC_LEVEL) +
-               "/" + redirectFX + "_" + redirectFY + ".jpg";
+        return String.format("/avis-show/symlinks/%s/%s/%s/%s/%s-%s-%s-%s-%s.%s_files/%d/%d_%d.jpg",
+                             id.substring(0, 1), id.substring(1, 2), id.substring(2, 3), id.substring(3, 4),
+                             id.substring(0, 8), id.substring(8, 12), id.substring(12, 16), id.substring(16, 20),
+                             id.substring(20, 32),
+                             IMAGE_SERVER_EXTENSION,
+                             level - LAST_RENDER_LEVEL + FIRST_BASIC_LEVEL, redirectFX, redirectFY);
     }
 
     private String toExternalURL(String gam, String cnt, String deepZoom) {
-        String url = "http://achernar/iipsrv/?GAM=" + gam + "&CNT=" + cnt + "&DeepZoom=" + deepZoom;
+        String url = IMAGE_SERVER + "?GAM=" + gam + "&CNT=" + cnt + "&DeepZoom=" + deepZoom;
         log.trace("Redirecting to " + url);
         return url;
     }

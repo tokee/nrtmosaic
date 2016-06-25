@@ -147,3 +147,8 @@ http://localhost:8080/nrtmosaic/services/image?source=foo&x=1&y=1&z=1
 
 Sample GUI:
 http://localhost:8080/gui/
+
+### TIFF
+http://iipimage.sourceforge.net/documentation/images/
+convert <source> -define tiff:tile-geometry=256x256 -compress jpeg 'ptif:<destination>.tif'
+for I in *.jp2; do convert $I -define tiff:tile-geometry=256x256 -quality 80 -compress jpeg "ptif:${I%.*}.tif" ; done

@@ -84,6 +84,9 @@ public class TileProvider {
                 throw new RuntimeException("Unable to resolve tile for source=" + source);
             }
         }
+        if (image == null) {
+            throw new IllegalStateException("image is null for '" + source + "'");
+        }
         if (image.getWidth() != edge || image.getHeight() != edge) {
             int fillGrey = keeper.getFillGrey(imageURL.toString());
             log.trace("Padding tile '" + source + "' of " + image.getWidth() + "x" + image.getHeight() +
