@@ -137,7 +137,7 @@ Tip: NRT-Mosaic is hungry for file handles. 1024 open files (check with 'ulimit 
 curl "http://ftp.download-by.net/apache/tomcat/tomcat-8/v8.0.35/bin/apache-tomcat-8.0.35.tar.gz" > apache-tomcat-8.0.35.tar.gz
 tar xzovf apache-tomcat-8.0.35.tar.gz
 ln -s apache-tomcat-8.0.35 tomcat
-echo "export JAVA_OPTS=\""-Xmx1000m $JAVA_OPTS\"" > tomcat/bin/setenv.sh
+echo "export JAVA_OPTS=\"-Xmx1000m $JAVA_OPTS\"" > tomcat/bin/setenv.sh
 tomcat/bin/startup.sh
 ./deployLocalTomcat.sh
 cp -r gui/ tomcat/webapps/
@@ -147,3 +147,8 @@ http://localhost:8080/nrtmosaic/services/image?source=foo&x=1&y=1&z=1
 
 Sample GUI:
 http://localhost:8080/gui/
+
+### TIFF
+http://iipimage.sourceforge.net/documentation/images/
+convert <source> -define tiff:tile-geometry=256x256 -compress jpeg 'ptif:<destination>.tif'
+for I in *.jp2; do convert $I -define tiff:tile-geometry=256x256 -quality 80 -compress jpeg "ptif:${I%.*}.tif" ; done

@@ -49,6 +49,22 @@ public class PrimeTest {
         Util.show(tiles);
     }
 
+    @Test
+    public void testTEHome() throws IOException {
+        String BASE= "/mnt/active/www/nrtmosaic/tiff/3ec6edb8-8729-4f63-917e-aa635de34532.tif_files/8/0_0";
+        final int START = 12;
+        final int END = 26;
+
+        BufferedImage[] tiles = new BufferedImage[END-START+1];
+        int c = 4;
+        for (int zoom = START ; zoom <= END ; zoom++) {
+            tiles[zoom-START] = Prime.instance().deepzoom(String.format(
+                    "%s/%d/%d_%d", BASE, zoom, c, c), "2.0", "1.2");
+            c *= 2;
+        }
+        Util.show(tiles);
+    }
+
     // https://github.com/tokee/nrtmosaic/issues/11
     @Test
     public void testTileWrap23() throws IOException {
