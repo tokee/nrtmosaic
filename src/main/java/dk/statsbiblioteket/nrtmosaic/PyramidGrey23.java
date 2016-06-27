@@ -15,6 +15,7 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.nio.MappedByteBuffer;
 import java.nio.channels.Channels;
 import java.nio.channels.WritableByteChannel;
 import java.nio.file.Files;
@@ -95,6 +96,13 @@ public class PyramidGrey23 {
         this.data = ByteBuffer.wrap(data, origo, byteCount);
     }
 
+    public PyramidGrey23(MappedByteBuffer buffer, int origo, int maxTileLevel) {
+        this.maxTileLevel = maxTileLevel;
+        this.byteCount = tileOffsets[maxTileLevel+1];
+        this.data = buffer;
+        this.origo = origo;
+    }
+
     public PyramidGrey23 createNew(Path dat) throws IOException {
         return new PyramidGrey23(maxTileLevel, dat);
     }
@@ -103,6 +111,9 @@ public class PyramidGrey23 {
     }
     public PyramidGrey23 createNew(UUID id) {
         return new PyramidGrey23(maxTileLevel).setID(id);
+    }
+    public PyramidGrey23 createNew(MappedByteBuffer buffer, int offset) {
+        return new PyramidGrey23(buffer, offset, maxTileLevel);
     }
 
 
@@ -162,6 +173,13 @@ public class PyramidGrey23 {
     }
     public int getFractionHeight() {
         return 3;
+    }
+
+    /**
+     * @return the amount of significant bytes, containing all Pyramid data.
+     */
+    public int getBytecount() {
+        return byteCount;
     }
 
     public UUID getID() {

@@ -17,6 +17,10 @@ package dk.statsbiblioteket.nrtmosaic;
 import org.apache.commons.logging.LogFactory;
 import org.apache.commons.logging.Log;
 
+import java.io.IOException;
+import java.io.RandomAccessFile;
+import java.nio.MappedByteBuffer;
+import java.nio.channels.FileChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -47,32 +51,73 @@ public class Keeper {
     // /tmp/pyramid_test1631652512768907712/ 02/ 82/ 02823b5f223a41249913985cb5ad815f.dat
     public Keeper(Path root) {
         long startTime = System.nanoTime();
+        loadFromConcatenations(root);
+        //loadFromIndividualFiles(root);
+        log.info("Finished loading " + size() + " pyramids in " + (System.nanoTime() - startTime) / 1000000 + "ms");
+    }
+
+    private void loadFromConcatenations(Path root) {
+        Path concatRoot = root.resolve("concatenated");
+        if (!Files.exists(concatRoot)) {
+            throw new RuntimeException("The expected concatenation cache did not exist at " + concatRoot);
+        }
+        for (int i = 0 ; i < 256 ; i++) {
+            Path concatFile = concatRoot.resolve(i + ".dat");
+            if (!Files.exists(concatFile)) {
+                log.warn("Expected concatenation file at " + concatFile);
+                continue;
+            }
+            long concatSize;
+            try {
+                concatSize = Files.size(concatFile);
+            } catch (IOException e) {
+                log.warn("Unable to determine size of concatenation file " + concatFile, e);
+                continue;
+            }
+            if (concatSize == 0) {
+                log.trace("Concatenation file of size 0 was skipped: " + concatFile);
+                continue;
+            }
+            if (concatSize > Integer.MAX_VALUE) {
+                throw new UnsupportedOperationException(
+                        "Sorry, but " + concatFile + " is > 2GB, which is not currently supported");
+            }
+
+            MappedByteBuffer mapped;
+            try {
+                mapped = new RandomAccessFile(concatFile.toFile().getCanonicalFile(), "r").getChannel().
+                        map(FileChannel.MapMode.READ_ONLY, 0, concatSize);
+            } catch (IOException e) {
+                throw new RuntimeException("Unable to map concatenated pyramids file " + concatFile, e);
+            }
+            int offset = 0;
+            int mapCount = 0;
+            while (offset < concatSize) {
+                addPyramid(Config.imhotep.createNew(mapped, offset));
+                offset += Config.imhotep.getBytecount();
+                mapCount++;
+            }
+            log.debug("Mapped " + mapCount + " pyramids from " + concatFile);
+        }
+        sortPyramids();
+    }
+
+    private void loadFromIndividualFiles(Path root) {
         log.debug("Loading pyramids from " + root);
         Util.wrappedList(root).
                 filter(sub1 -> Files.isDirectory(sub1) && sub1.getFileName().toString().length() == 2).
                 forEach(sub1 -> Util.wrappedList(sub1).
                         filter(sub2 -> Files.isDirectory(sub2) && sub2.getFileName().toString().length() == 2).
-                        forEach(sub2 -> Util.wrappedList(sub2).
-                                filter(dat -> Files.isRegularFile(dat) && dat.toString().endsWith(".dat")).
-                                forEach(this::addPyramid)));
+                                            forEach(sub2 -> Util.wrappedList(sub2).
+                                                    filter(dat -> Files.isRegularFile(dat) && dat.toString().endsWith(".dat")).
+                                                                        forEach(this::addPyramid)));
         sortPyramids();
-        log.info("Finished loading " + size() + " pyramids in " + (System.nanoTime()-startTime)/1000000 + "ms");
     }
 
     private void sortPyramids() {
         for (int i = 0 ; i < 256 ; i++) {
-            Collections.sort(pyramidsTop.get(i), new Comparator<PyramidGrey23>() {
-                @Override
-                public int compare(PyramidGrey23 o1, PyramidGrey23 o2) {
-                    return o2.getTopSecondary()-o1.getTopSecondary();
-                }
-            });
-            Collections.sort(pyramidsBottom.get(i), new Comparator<PyramidGrey23>() {
-                @Override
-                public int compare(PyramidGrey23 o1, PyramidGrey23 o2) {
-                    return o2.getBottomSecondary()-o1.getBottomSecondary();
-                }
-            });
+            Collections.sort(pyramidsTop.get(i), (o1, o2) -> o2.getTopSecondary()-o1.getTopSecondary());
+            Collections.sort(pyramidsBottom.get(i), (o1, o2) -> o2.getBottomSecondary()-o1.getBottomSecondary());
         }
     }
 
@@ -157,10 +202,14 @@ public class Keeper {
             log.warn("Unable to load Pyramid from '" + dat + "'", e);
             return;
         }
+        addPyramid(pyramid);
+        log.trace("Loaded #" + size() + " " + pyramid);
+    }
+
+    private void addPyramid(PyramidGrey23 pyramid) {
         pyramidsTop.get(pyramid.getTopPrimary()).add(pyramid);
         pyramidsBottom.get(pyramid.getBottomPrimary()).add(pyramid);
         pyramids.put(pyramid.getID(), pyramid);
-        log.trace("Loaded #" + size() + " " + pyramid);
     }
 
 }
