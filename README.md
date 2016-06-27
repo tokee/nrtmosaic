@@ -80,7 +80,7 @@ Very specific for Statsbiblioteket!
 
 `curl "http://prod-search03:56708/aviser/sbsolr/collection1/select?fq=recordBase%3Adoms_aviser&fq=py%3A%5B*+TO+1915%5D&fl=pageUUID&wt=csv&indent=true&q=geder"`
 
-`curl "http://mars:56708/aviser/sbsolr/collection1/select?fq=recordBase%3Adoms_aviser&fq=py%3A[*+TO+1915]&fl=pageUUID&wt=csv&indent=true&q=geder"`
+`curl "http://mars:56708/aviser/sbsolr/collection1/select?fq=recordBase%3Adoms_aviser&fq=py%3A[*+TO+1845]&fl=pageUUID&wt=csv&indent=true&q=geder"`
 pageUUID
 doms_aviser_page:uuid:5926aa0a-f1a8-4899-9ab7-108a1b4ed74e
 doms_aviser_page:uuid:9c2f60b0-c314-4a78-9abe-bbf51df69788
