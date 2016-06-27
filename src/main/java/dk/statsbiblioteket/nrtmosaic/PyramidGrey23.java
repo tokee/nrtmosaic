@@ -72,8 +72,8 @@ public class PyramidGrey23 {
         final int expected = tileOffsets[maxTileLevel+1];
         try (FileInputStream fis = new FileInputStream(dat.toFile())) {
             int read = 0;
-            while (read < data.length) {
-                int r = fis.read(data, read, data.length - read);
+            while (read < expected) {
+                int r = fis.read(data, origo+read, expected - read);
                 if (r <= 0) {
                     break;
                 }

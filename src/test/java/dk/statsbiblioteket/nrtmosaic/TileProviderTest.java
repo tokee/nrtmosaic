@@ -1,5 +1,7 @@
 package dk.statsbiblioteket.nrtmosaic;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.junit.Test;
 
 import javax.imageio.ImageIO;
@@ -22,6 +24,7 @@ import java.io.IOException;
  *
  */
 public class TileProviderTest {
+    private static Log log = LogFactory.getLog(TileProviderTest.class);
 
     public static final String SAMPLE_1 = "256/source_9c05d958-b616-47c1-9e4f-63ec2dd9429e_13_13_13.jpg";
     public static final String SAMPLE_2 = "256/source_9c05d958-b616-47c1-9e4f-63ec2dd9429e_11_1_2.jpg";
@@ -53,8 +56,10 @@ public class TileProviderTest {
             dialog.getContentPane().add(new JLabel(scale(new ImageIcon(
                     Prime.instance().getTileProvider().getTileRender(original, 0, 0, level, false)))));
         }
+        log.debug("Attempting to show window with Tiles");
         dialog.setVisible(true);
         dialog.pack();
+        dialog.setVisible(true);
         dialog.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         Thread.sleep(1000000); // TODO: Add code to wait for window close
     }

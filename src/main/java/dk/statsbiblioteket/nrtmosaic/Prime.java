@@ -81,7 +81,7 @@ public class Prime {
         TURTLE_LEVEL = Config.getInt("prime.turtlelevel");
         try {
             TURTLE = ImageIO.read(Util.resolveURL("turtle.png"));
-            log.debug("Loaded turtle");
+            log.debug("Loaded turtle of size " + TURTLE.getWidth() + "x" + TURTLE.getHeight());
         } catch (IOException e) {
             log.error("Unable to open turtle.png", e);
         }
