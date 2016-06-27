@@ -36,6 +36,7 @@ public class Prime {
     private final int FIRST_BASIC_LEVEL; // 8 at Statsbiblioteket
     private final int LAST_BASIC_LEVEL;
     private final int LAST_RENDER_LEVEL;
+    private final int TURTLE_LEVEL;
     private final int edge;
     private final int FW;
     private final int FH;
@@ -43,6 +44,8 @@ public class Prime {
     private final String IMAGE_SERVER;
     private final Pattern IMAGE_SERVER_PATH_REGEXP;
     private final String IMAGE_SERVER_PATH_REPLACEMENT;
+    private BufferedImage TURTLE = null;
+
     // Last level is REDIRECT
 
     private static Prime singleton;
@@ -76,6 +79,13 @@ public class Prime {
         IMAGE_SERVER = Config.getString("imageserver");
         IMAGE_SERVER_PATH_REGEXP = Pattern.compile(Config.getString("imageserver.path.regexp"));
         IMAGE_SERVER_PATH_REPLACEMENT = Config.getString("imageserver.path.replacement");
+
+        TURTLE_LEVEL = Config.getInt("prime.turtlelevel");
+        try {
+            TURTLE = ImageIO.read(Util.resolveURL("turtle.png"));
+        } catch (IOException e) {
+            log.error("Unable to open turtle.png", e);
+        }
         log.info("Prime constructed in " + (System.nanoTime()-startTime)/1000000 + "ms");
     }
 
@@ -105,7 +115,9 @@ public class Prime {
         final String post = deepMatch.group(5);
 
         BufferedImage result;
-        if (level > LAST_RENDER_LEVEL) {
+        if (level >= TURTLE_LEVEL && TURTLE != null) {
+            result = TURTLE;
+        } else if (level > LAST_RENDER_LEVEL) {
             result = deepzoomRedirect(pre, fx, fy, level, post, gam, cnt);
         } else if (level > LAST_BASIC_LEVEL) {
             result = deepzoomRender(pre, fx, fy, level, post, gam, cnt);
