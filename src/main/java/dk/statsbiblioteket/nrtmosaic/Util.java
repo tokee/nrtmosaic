@@ -26,9 +26,9 @@ import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.nio.file.*;
+import java.nio.file.attribute.BasicFileAttributes;
+import java.util.stream.Stream;
 
 public class Util {
     private static Log log = LogFactory.getLog(Util.class);
@@ -38,6 +38,35 @@ public class Util {
     public static final int FILL_COLOR_INT;
     public static final Color DARK_GREY;
     private static final BufferedImage DEFAULT_BLANK;
+
+    public static void deleteFolder(Path lastRoot) {
+        try {
+            Files.walkFileTree(lastRoot, new SimpleFileVisitor<Path>() {
+                @Override
+                public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
+                    Files.delete(file);
+                    return FileVisitResult.CONTINUE;
+                }
+
+                @Override
+                public FileVisitResult postVisitDirectory(Path dir, IOException exc) throws IOException {
+                    Files.delete(dir);
+                    return FileVisitResult.CONTINUE;
+                }
+            });
+        } catch (IOException e) {
+            throw new RuntimeException("IOException deleting " + lastRoot, e);
+        }
+    }
+
+    public static Stream<Path> wrappedList(Path folder) {
+        try {
+            return Files.list(folder);
+        } catch (IOException e) {
+            throw new RuntimeException("IOException iterating sub-folders of " + folder, e);
+        }
+    }
+
     public enum FILL_STYLE {
         fixed,  // Same grey for all tiles
         average // Average for existing pixels for the full source image

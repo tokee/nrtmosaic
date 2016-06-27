@@ -17,12 +17,10 @@ package dk.statsbiblioteket.nrtmosaic;
 import org.apache.commons.logging.LogFactory;
 import org.apache.commons.logging.Log;
 
-import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
-import java.util.stream.Stream;
 
 /**
  * Keeps track of the Pyramids.
@@ -50,11 +48,11 @@ public class Keeper {
     public Keeper(Path root) {
         long startTime = System.nanoTime();
         log.debug("Loading pyramids from " + root);
-        wrappedList(root).
-                filter(sub1 -> Files.isDirectory(sub1)).
-                forEach(sub1 -> wrappedList(sub1).
-                        filter(sub2 -> Files.isDirectory(sub2)).
-                        forEach(sub2 -> wrappedList(sub2).
+        Util.wrappedList(root).
+                filter(sub1 -> Files.isDirectory(sub1) && sub1.getFileName().toString().length() == 2).
+                forEach(sub1 -> Util.wrappedList(sub1).
+                        filter(sub2 -> Files.isDirectory(sub2) && sub2.getFileName().toString().length() == 2).
+                        forEach(sub2 -> Util.wrappedList(sub2).
                                 filter(dat -> Files.isRegularFile(dat) && dat.toString().endsWith(".dat")).
                                 forEach(this::addPyramid)));
         sortPyramids();
@@ -165,11 +163,4 @@ public class Keeper {
         log.trace("Loaded #" + size() + " " + pyramid);
     }
 
-    private Stream<Path> wrappedList(Path folder) {
-        try {
-            return Files.list(folder);
-        } catch (IOException e) {
-            throw new RuntimeException("IOException iterating sub-folders to for " + folder, e);
-        }
-    }
 }

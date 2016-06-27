@@ -240,10 +240,16 @@ public class PyramidGrey23 {
         try (FileOutputStream fos = new FileOutputStream(full.toFile())) {
             WritableByteChannel channel = Channels.newChannel(fos);
             data.position(origo);
-            channel.write(data);
+            channel.write(data); // TODO: Only write bytecount bytes
 //            fos.write(data.array(), origo, byteCount);
         }
         return true;
+    }
+
+    public synchronized void store(FileOutputStream outputStream) throws IOException {
+        WritableByteChannel channel = Channels.newChannel(outputStream);
+        data.position(origo);
+        channel.write(data); // TODO: Only write bytecount bytes
     }
 
     public Path getFullPath(Path root, UUID id) {
@@ -289,4 +295,5 @@ public class PyramidGrey23 {
             }
         }
     }
+
 }
