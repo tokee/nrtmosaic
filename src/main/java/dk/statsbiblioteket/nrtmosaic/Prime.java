@@ -115,7 +115,7 @@ public class Prime {
 
         BufferedImage result;
         if (level >= TURTLE_LEVEL && TURTLE != null) {
-            log.debug("level " + level + " >= " + TURTLE_LEVEL + ", returning turtle");
+            log.debug("deepzoom level " + level + " >= " + TURTLE_LEVEL + ", returning turtle");
             result = TURTLE;
         } else if (level > LAST_RENDER_LEVEL) {
             result = deepzoomRedirect(pre, fx, fy, level, post, gam, cnt);
@@ -133,7 +133,8 @@ public class Prime {
     // Topmost levels where NRTMosaic works as a plain image server
     private BufferedImage deepZoomBasic(String deepZoomSnippet, long fx, long fy, int level, String gam, String cnt,
                                         boolean pad) throws IOException {
-        log.debug("deepzoom basic tile for " + deepZoomSnippet + ", pad=" + pad);
+        log.trace("deepzoom basic tile for " + deepZoomSnippet + ", pad=" + pad);
+        final long startTime = System.nanoTime();
         PyramidGrey23 pyramid = keeper.getPyramid(deepZoomSnippet);
 
         if (pyramid != null) { // Check if the wanted tile is outside of the image pixels
@@ -171,6 +172,9 @@ public class Prime {
                 return Util.getBlankTile(keeper.getFillGrey(deepZoomSnippet));
             }
             throw new IIOException("Unable to read '" + external + "' as an image", e);
+        } finally {
+            log.debug("deepzoom basic tile for " + deepZoomSnippet + ", pad=" + pad + " piped in " +
+                      (System.nanoTime()-startTime) + "ms");
         }
     }
 
@@ -208,7 +212,8 @@ public class Prime {
     // Bottom level where NRTMosaic passes tiles from the image server for different images
     private BufferedImage deepzoomRedirect(String pre, long fx, long fy, int level, String post, String gam, String cnt)
             throws IOException {
-        log.debug("deepzoom redirect tile for " + pre + ", " + fx + "x" + fy + ", level " + level);
+        log.trace("deepzoom redirect tile for " + pre + ", " + fx + "x" + fy + ", level " + level);
+        final long startTime = System.nanoTime();
 
         final int zoomFactorToRender = (int) Math.pow(2, level - LAST_RENDER_LEVEL);
 
@@ -275,7 +280,7 @@ public class Prime {
         // /avis-show/symlinks/9/c/0/5/9c05d958-b616-47c1-9e4f-63ec2dd9429e.jp2_files/0/0_0.jpg
         final String basicSnippet = toBasicDeepzoomSnippet(pyramid, redirectFX, redirectFY, level);
         log.debug("deepzoom redirect from " + pre + " " + fx + "x" + fy + ", level " + level + " to deepzoom " +
-                  basicSnippet);
+                  basicSnippet + " in " + (System.nanoTime()-startTime)/1000000+"ms");
         return deepzoom(basicSnippet, gam, cnt, true, border);
     }
 
