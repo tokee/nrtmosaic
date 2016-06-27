@@ -14,6 +14,9 @@ import org.apache.commons.logging.LogFactory;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.channels.Channels;
+import java.nio.channels.WritableByteChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
@@ -25,9 +28,10 @@ import java.nio.file.Path;
  */
 public class PyramidGrey23 {
     private static Log log = LogFactory.getLog(PyramidGrey23.class);
-    private final byte[] data;
+    private final ByteBuffer data;
     private final int origo;
     private final int maxTileLevel; // 1:1x1, 2:2x2, 4:4x4, 5:16x16, 6:32:32, 7:64x64, 8:128x128
+    private final int byteCount; // Number of significant bytes in data
     // Shared offsets for locating the right tiles in the data
     private static final int[] tileOffsets; // Offset is byte offset, aligned to mod 8
 
@@ -58,31 +62,37 @@ public class PyramidGrey23 {
 
     public PyramidGrey23(int maxTileLevel) {
         this.maxTileLevel = maxTileLevel;
-        this.data = new byte[tileOffsets[maxTileLevel+1]];
+        this.byteCount = tileOffsets[maxTileLevel+1];
+        this.data = ByteBuffer.allocate(byteCount);
         this.origo = 0;
     }
     private PyramidGrey23(byte[] data, int origo, int maxTileLevel) {
         this.maxTileLevel = maxTileLevel;
-        this.data = data;
+        this.byteCount = tileOffsets[maxTileLevel+1];
+        this.data = ByteBuffer.wrap(data, origo, byteCount);
         this.origo = origo;
     }
 
     private PyramidGrey23(int maxTileLevel, Path dat) throws IOException {
-        this(maxTileLevel);
-        final int expected = tileOffsets[maxTileLevel+1];
+        this.origo = 0;
+        this.maxTileLevel = maxTileLevel;
+        this.byteCount = tileOffsets[maxTileLevel+1];
+        byte[] data = new byte[byteCount];
+
         try (FileInputStream fis = new FileInputStream(dat.toFile())) {
             int read = 0;
-            while (read < expected) {
-                int r = fis.read(data, origo+read, expected - read);
+            while (read < byteCount) {
+                int r = fis.read(data, origo+read, byteCount-read);
                 if (r <= 0) {
                     break;
                 }
                 read += r;
             }
-            if (read != expected) {
-                throw new IOException("Expected " + expected + " bytes from '" + dat + "' but got only " + read);
+            if (read != byteCount) {
+                throw new IOException("Expected " + byteCount + " bytes from '" + dat + "' but got only " + read);
             }
         }
+        this.data = ByteBuffer.wrap(data, origo, byteCount);
     }
 
     public PyramidGrey23 createNew(Path dat) throws IOException {
@@ -102,10 +112,10 @@ public class PyramidGrey23 {
         return this;
     }
     public void setAverageGrey(int averageGrey) {
-        data[origo+ AVERAGE_GREY_INDEX] = (byte)averageGrey;
+        data.put(origo+ AVERAGE_GREY_INDEX, (byte)averageGrey);
     }
     public int getAverageGrey() {
-        return 0xFF & data[origo+ AVERAGE_GREY_INDEX];
+        return 0xFF & data.get(origo+ AVERAGE_GREY_INDEX);
     }
     public void setSourceSize(int width, int height) {
         log.trace("Setting source size " + width + "x" + height);
@@ -121,25 +131,25 @@ public class PyramidGrey23 {
 
     private void setShort(int offset, long value) {
         for (int i = 0; i < 2; ++i) {
-          data[origo+offset+i] = (byte) (value >>> (2-i-1 << 3));
+          data.put(origo+offset+i, (byte) (value >>> (2-i-1 << 3)));
         }
     }
     private short getShort(int offset) {
         long value = 0;
         for (int i = 0; i < 2; i++) {
-            value |= (long)(0xFF&data[origo+offset+i]) << (2-i-1 << 3);
+            value |= (long)(0xFF&data.get(origo+offset+i)) << (2-i-1 << 3);
         }
         return (short) value;
     }
-    public void setLong(int offset, long value) {
+    public void setLong(int offset, long value) { // TODO: Change get & set of atomics to ByteBuffer native
         for (int i = 0; i < 8; ++i) {
-          data[origo+offset+i] = (byte) (value >>> (8-i-1 << 3));
+          data.put(origo+offset+i, (byte) (value >>> (8-i-1 << 3)));
         }
     }
     public long getLong(int offset) {
         long value = 0;
         for (int i = 0; i < 8; i++) {
-            value |= (long)(0xFF&data[origo+offset+i]) << (8-i-1 << 3);
+            value |= (long)(0xFF&data.get(origo+offset+i)) << (8-i-1 << 3);
         }
         return value;
     }
@@ -184,19 +194,21 @@ public class PyramidGrey23 {
 
     public int getTopPrimary() { // ([0,0]+[0,1]+[1,0]+[1,1])/4
         final int index = origo+getTilesOffset(1);
-        return ((0xFF&data[index]) + (0xFF&data[index+1]) + (0xFF&data[index+2]) + (0xFF&data[index+3])) / 4;
+        return ((0xFF&data.get(index)) + (0xFF&data.get(index+1)) + (0xFF&data.get(index+2)) +
+                (0xFF&data.get(index+3))) / 4;
     }
     public int getTopSecondary() { // ([2,0]+[2,1])/4
         final int index = origo+getTilesOffset(1);
-        return ((0xFF&data[index+4]) + (0xFF&data[index+5])) / 2;
+        return ((0xFF&data.get(index+4)) + (0xFF&data.get(index+5))) / 2;
     }
     public int getBottomPrimary() { // ([1,0]+[1,1]+[2,0]+[2,1])/4
         final int index = origo+getTilesOffset(1);
-        return ((0xFF&data[index+2]) + (0xFF&data[index+3]) + (0xFF&data[index+4]) + (0xFF&data[index+5])) / 4;
+        return ((0xFF&data.get(index+2)) + (0xFF&data.get(index+3)) + (0xFF&data.get(index+4)) +
+                (0xFF&data.get(index+5))) / 4;
     }
     public int getBottomSecondary() { // ([0,0]+[0,1])/4
         final int index = origo+getTilesOffset(1);
-        return ((0xFF&data[index]) + (0xFF&data[index+1])) / 2;
+        return ((0xFF&data.get(index)) + (0xFF&data.get(index+1))) / 2;
     }
 
     @Override
@@ -207,7 +219,7 @@ public class PyramidGrey23 {
     public boolean store(Path root) throws IOException {
         return store(root, false);
     }
-    public boolean store(Path root, boolean overwrite) throws IOException {
+    public synchronized boolean store(Path root, boolean overwrite) throws IOException {
         final String hex = getID().toHex();
 
         final Path folder = root.resolve(hex.substring(0, 2)).resolve(hex.substring(2, 4));
@@ -226,7 +238,10 @@ public class PyramidGrey23 {
         }
         log.debug("Storing " + this + " as " + full);
         try (FileOutputStream fos = new FileOutputStream(full.toFile())) {
-            fos.write(data, origo, data.length - origo);
+            WritableByteChannel channel = Channels.newChannel(fos);
+            data.position(origo);
+            channel.write(data);
+//            fos.write(data.array(), origo, byteCount);
         }
         return true;
     }
@@ -236,12 +251,14 @@ public class PyramidGrey23 {
         Path folder = root.resolve(hex.substring(0, 2)).resolve(hex.substring(2, 4));
         return folder.resolve(hex + ".dat");
     }
-
-    public void setData(byte[] data, int level, int fx, int fy) {
+    // Setting position does not seem thread safe
+    public synchronized void setData(byte[] data, int level, int fx, int fy) {
         final int edge = getTileEdge(level);
         final int tileOffset = getTileOffset(level, fx, fy);
         final int blockSize = edge*edge;
-        System.arraycopy(data, 0, this.data, origo+tileOffset, blockSize);
+//        log.debug(this.data.array().length + " - " + (origo+tileOffset) + " - " + blockSize);
+        this.data.position(origo+tileOffset);
+        this.data.put(data, 0, blockSize);
     }
 
     /**
@@ -264,12 +281,12 @@ public class PyramidGrey23 {
                     final int canvasIndex = (origoY + ty) * canvasWidth + origoX + tx;
                     final int dataIndex = origo + tileOffset + (ty * tileEdge) + tx;
                     // Overflow is clipped
-                    if (canvasIndex < canvas.length && canvasIndex >= 0 && dataIndex < data.length && dataIndex >= 0) {
-                        canvas[canvasIndex] = 0xFF & data[dataIndex];
+                    if (canvasIndex < canvas.length && canvasIndex >= 0 && dataIndex < origo+byteCount
+                        && dataIndex >= 0) {
+                        canvas[canvasIndex] = 0xFF & data.get(dataIndex);
                     }
                 }
             }
         }
     }
-
 }

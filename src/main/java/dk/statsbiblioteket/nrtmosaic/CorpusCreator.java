@@ -94,7 +94,7 @@ public class CorpusCreator {
                     }
                     pyramid = cc.breakDownImage(sourceURL);
                 } catch (Exception e) {
-                    log.warn("Unable to create pyramid for " + line + ": " + e.getMessage());
+                    log.warn("Unable to create pyramid for '" + line + "'", e);
                     continue;
                 }
                 pyramid.store(dest, overwrite);

@@ -57,8 +57,9 @@ public class TileProviderTest {
                     Prime.instance().getTileProvider().getTileRender(original, 0, 0, level, false)))));
         }
         log.debug("Attempting to show window with Tiles");
-        dialog.setVisible(true);
+        Thread.sleep(150);
         dialog.pack();
+        Thread.sleep(150);
         dialog.setVisible(true);
         dialog.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         Thread.sleep(1000000); // TODO: Add code to wait for window close
