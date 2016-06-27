@@ -148,7 +148,14 @@ http://localhost:8080/nrtmosaic/services/image?source=foo&x=1&y=1&z=1
 Sample GUI:
 http://localhost:8080/gui/
 
+### Get samples at Statsbiblioteket
+curl 'http://prod-search03:56708/aviser/sbsolr/collection1/select?q=page_pixels%3A%5B20000000+TO+*%5D+AND+py%3A%5B1850+TO+1910%5D+AND+hest+AND+recordBase%3Adoms_aviser&rows=1000&fl=pageUUID&wt=csv&indent=true' | grep -v pageUUID  | cut -d: -f3 > samples 
+
+
 ### TIFF
 http://iipimage.sourceforge.net/documentation/images/
 convert <source> -define tiff:tile-geometry=256x256 -compress jpeg 'ptif:<destination>.tif'
+
 for I in *.jp2; do convert $I -define tiff:tile-geometry=256x256 -quality 80 -compress jpeg "ptif:${I%.*}.tif" ; done
+or
+ls *.jp2 | parallel -j 4 'I={} ; convert $I -define tiff:tile-geometry=256x256 -quality 80 -compress jpeg "ptif:${I%.*}.tif"'

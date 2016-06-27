@@ -2,6 +2,7 @@ package dk.statsbiblioteket.nrtmosaic;
 
 import org.junit.Test;
 
+import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -31,6 +32,11 @@ public class PrimeTest {
         String BASE = TileProviderTest.SAMPLE_1;
         Prime.instance().deepzoom(String.format("%s/%d/%d_%d", BASE, 23, 2, 0), "2.0", "1.2");
         Prime.instance().deepzoom(String.format("%s/%d/%d_%d", BASE, 23, 3, 0), "2.0", "1.2");
+    }
+
+    @Test
+    public void testTurtle() throws IOException {
+        Util.show(ImageIO.read(Util.resolveURL("turtle.png")));
     }
 
     @Test
