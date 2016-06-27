@@ -46,8 +46,6 @@ public class Prime {
     private final String IMAGE_SERVER_PATH_REPLACEMENT;
     private BufferedImage TURTLE = null;
 
-    // Last level is REDIRECT
-
     private static Prime singleton;
     public static synchronized Prime instance() {
         if (singleton == null) {
@@ -83,6 +81,7 @@ public class Prime {
         TURTLE_LEVEL = Config.getInt("prime.turtlelevel");
         try {
             TURTLE = ImageIO.read(Util.resolveURL("turtle.png"));
+            log.debug("Loaded turtle");
         } catch (IOException e) {
             log.error("Unable to open turtle.png", e);
         }
@@ -110,12 +109,13 @@ public class Prime {
         }
         final String pre = deepMatch.group(1);
         final int level = Integer.parseInt(deepMatch.group(2));
-        final int fx = Integer.parseInt(deepMatch.group(3));
-        final int fy = Integer.parseInt(deepMatch.group(4));
+        final long fx = Long.parseLong(deepMatch.group(3));
+        final long fy = Long.parseLong(deepMatch.group(4));
         final String post = deepMatch.group(5);
 
         BufferedImage result;
         if (level >= TURTLE_LEVEL && TURTLE != null) {
+            log.debug("level " + level + " >= " + TURTLE_LEVEL + ", returning turtle");
             result = TURTLE;
         } else if (level > LAST_RENDER_LEVEL) {
             result = deepzoomRedirect(pre, fx, fy, level, post, gam, cnt);
@@ -131,7 +131,7 @@ public class Prime {
     }
 
     // Topmost levels where NRTMosaic works as a plain image server
-    private BufferedImage deepZoomBasic(String deepZoomSnippet, int fx, int fy, int level, String gam, String cnt,
+    private BufferedImage deepZoomBasic(String deepZoomSnippet, long fx, long fy, int level, String gam, String cnt,
                                         boolean pad) throws IOException {
         log.debug("deepzoom basic tile for " + deepZoomSnippet + ", pad=" + pad);
         PyramidGrey23 pyramid = keeper.getPyramid(deepZoomSnippet);
@@ -143,8 +143,8 @@ public class Prime {
                 log.warn("The pyramid for " + deepZoomSnippet + " has cached dimensions " + sourceW + "x" + sourceH);
             }
             final int zoomFactor = (int) (Math.pow(2, level - FIRST_BASIC_LEVEL));
-            int maxExistingX = zoomFactor * sourceW / Util.EDGE;
-            int maxExistingY = zoomFactor * sourceH / Util.EDGE;
+            long maxExistingX = (long) zoomFactor * sourceW / Util.EDGE;
+            long maxExistingY = (long) zoomFactor * sourceH / Util.EDGE;
 /*        log.info(fx + "x" + fy + " at level " + level + ": level-FBL=" + (level-FIRST_BASIC_LEVEL) + ", p.sw=" +
                  sourceW + ", EDGE=" + Util.EDGE + ", 2^(l-FBL)=" + Math.pow(2, level-FIRST_BASIC_LEVEL) +
                  ", 2^(l-FBL)*p.sw=" + (Math.pow(2, level - FIRST_BASIC_LEVEL) * pyramid.getSourceWidth()) +
@@ -176,23 +176,23 @@ public class Prime {
 
     // Middle level where NRTMosaic renders tiles
     private BufferedImage deepzoomRender(
-            String pre, int fx, int fy, int level, String post, String gam, String cnt) {
+            String pre, long fx, long fy, int level, String post, String gam, String cnt) {
         log.debug("deepzoom render tile for " + pre + ", " + fx + "x" + fy + ", level " + level);
         final int zoomFactor = (int) Math.pow(2, level - LAST_BASIC_LEVEL);
 
         // Coordinates for the basic tile: ...3ec2dd9429e.jp2_files/LAST_BASIC_LEVEL/sourceFX_sourceFY
-        final int basicFX = fx/zoomFactor;
-        final int basicFY = fy/zoomFactor;
+        final long basicFX = fx/zoomFactor;
+        final long basicFY = fy/zoomFactor;
         Tile23 tile = tileProvider.getTile(toExternalURL(
                 gam, cnt, pre + "/" + LAST_BASIC_LEVEL + "/" + basicFX + "_" + basicFY + post), true);
 
         // Upper left corner of the basic tile, measured in global coordinates
-        final int origoFX = basicFX*zoomFactor;
-        final int origoFY = basicFY*zoomFactor;
+        final long origoFX = basicFX*zoomFactor;
+        final long origoFY = basicFY*zoomFactor;
 
         // Upper left corner of the wanted sub-tile, inside of the basic tile. With level having basic leves as origo
-        final int renderFX = fx-origoFX;
-        final int renderFY = fy-origoFY;
+        final int renderFX = (int) (fx - origoFX);
+        final int renderFY = (int) (fy - origoFY);
         final int renderLevel = level - LAST_BASIC_LEVEL + 1;
 
         return tile.renderImage(renderFX, renderFY, renderLevel, null);
@@ -206,30 +206,30 @@ public class Prime {
     // .jpg
 
     // Bottom level where NRTMosaic passes tiles from the image server for different images
-    private BufferedImage deepzoomRedirect(String pre, int fx, int fy, int level, String post, String gam, String cnt)
+    private BufferedImage deepzoomRedirect(String pre, long fx, long fy, int level, String post, String gam, String cnt)
             throws IOException {
         log.debug("deepzoom redirect tile for " + pre + ", " + fx + "x" + fy + ", level " + level);
 
         final int zoomFactorToRender = (int) Math.pow(2, level - LAST_RENDER_LEVEL);
 
         // Coordinates for the wanted Pyramid in the render tile
-        final int renderFX = fx/zoomFactorToRender;
-        final int renderFY = fy/zoomFactorToRender;
+        final int renderFX = (int) (fx / zoomFactorToRender);
+        final int renderFY = (int) (fy / zoomFactorToRender);
 
         final int zoomFactorToBasic = (int) Math.pow(2, LAST_RENDER_LEVEL - LAST_BASIC_LEVEL);
 
         // Coordinates for the basic tile: ...3ec2dd9429e.jp2_files/LAST_BASIC_LEVEL/sFX_sourceFY
-        final int basicFX = renderFX/zoomFactorToBasic;
-        final int basicFY = renderFY/zoomFactorToBasic;
+        final long basicFX = renderFX/zoomFactorToBasic;
+        final long basicFY = renderFY/zoomFactorToBasic;
         Tile23 tile = tileProvider.getTile(toExternalURL(
                 gam, cnt, pre + "/" + LAST_BASIC_LEVEL + "/" + basicFX + "_" + basicFY + post), true);
 
-        final int basicOrigoFX = basicFX*zoomFactorToBasic;
-        final int basicOrigoFY = basicFY*zoomFactorToBasic;
+        final long basicOrigoFX = basicFX*zoomFactorToBasic;
+        final long basicOrigoFY = basicFY*zoomFactorToBasic;
 
         // TODO: Mimick the logic from Tile23 renderTop, renderBottom and renderDual
-        final int pyramidX = renderFX-basicOrigoFX;
-        final int pyramidY = renderFY-basicOrigoFY;
+        final int pyramidX = (int) (renderFX - basicOrigoFX);
+        final int pyramidY = (int) (renderFY - basicOrigoFY);
 
         final int renderOrigoFX = renderFX*zoomFactorToRender;
         final int renderOrigoFY = renderFY*zoomFactorToRender;
@@ -237,8 +237,8 @@ public class Prime {
         final int basicHTiles = (int) Math.pow(2, level-LAST_RENDER_LEVEL);
         final int basicVTiles = basicHTiles/FW*FH;
 
-        int redirectFX = fx-renderOrigoFX;
-        int redirectFY = fy-renderOrigoFY;
+        long redirectFX = fx-renderOrigoFX;
+        long redirectFY = fy-renderOrigoFY;
 
         boolean border = false;
         PyramidGrey23 pyramid;
@@ -279,7 +279,7 @@ public class Prime {
         return deepzoom(basicSnippet, gam, cnt, true, border);
     }
 
-    private String toBasicDeepzoomSnippet(PyramidGrey23 pyramid, int redirectFX, int redirectFY, int level) {
+    private String toBasicDeepzoomSnippet(PyramidGrey23 pyramid, long redirectFX, long redirectFY, int level) {
         return String.format("%s_files/%d/%d_%d.jpg",
                              idToPath(pyramid.getID()),
                              level - LAST_RENDER_LEVEL + FIRST_BASIC_LEVEL, redirectFX, redirectFY);
