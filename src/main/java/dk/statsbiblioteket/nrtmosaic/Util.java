@@ -89,7 +89,10 @@ public class Util {
     }
 
     public static BufferedImage toGrey(BufferedImage image) {
-        if (image.getColorModel().getColorSpace().getType() == ColorSpace.TYPE_GRAY) {
+        return toGrey(image, false);
+    }
+    public static BufferedImage toGrey(BufferedImage image, boolean force) {
+        if (!force && image.getColorModel().getColorSpace().getType() == ColorSpace.TYPE_GRAY) {
             log.trace("toGrey: Image already grey, returning unmodified");
             return image;
         }

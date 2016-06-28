@@ -80,9 +80,9 @@ public class Prime {
 
         TURTLE_LEVEL = Config.getInt("prime.turtlelevel");
         try {
-            TURTLE = ImageIO.read(Util.resolveURL("turtle.png"));
+            TURTLE = Util.toGrey(ImageIO.read(Util.resolveURL("turtle.png")), true);
             log.debug("Loaded turtle of size " + TURTLE.getWidth() + "x" + TURTLE.getHeight());
-        } catch (IOException e) {
+        } catch (NullPointerException | IOException e) {
             log.error("Unable to open turtle.png", e);
         }
         log.info("Prime constructed in " + (System.nanoTime()-startTime)/1000000 + "ms");
