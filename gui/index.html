@@ -32,8 +32,9 @@
         Overlap:  "0",
         TileSize: "256",
         Size: {
-            Width:  4881*Math.pow(2, 26), // 13 = no recursion, 26 = 2 levels, 28+ crashes
-            Height: 7531*Math.pow(2, 26),
+            // Could this just be MAX_INTEGER?
+            Width:  4881*Math.pow(2, 29),
+            Height: 7531*Math.pow(2, 29),
         }
     }
     }
