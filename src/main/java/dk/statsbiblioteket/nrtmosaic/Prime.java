@@ -308,4 +308,21 @@ public class Prime {
         return tileProvider;
     }
 
+    // https://openseadragon.github.io/examples/tilesource-dzi/
+    // /avis-show/symlinks/9/c/0/5/9c05d958-b616-47c1-9e4f-63ec2dd9429e.dzi
+    public String getDZI(String deepZoom) {
+        PyramidGrey23 pyramid = keeper.getPyramid(deepZoom);
+        long dziFactor = Config.getLong("prime.dzifactor");
+        final long width = dziFactor*pyramid.getSourceWidth();
+        final long height = dziFactor*pyramid.getSourceHeight();
+        return String.format("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                             "<Image xmlns=\"http://schemas.microsoft.com/deepzoom/2008\"\n" +
+                             "       Format=\"jpg\" Overlap=\"0\" TileSize=\"256\" >\n" +
+                             "    <Size Height=\"%d\" Width=\"%h\"/>\n" +
+                             "</Image>", width, height);
+    }
+
+    public String getRandomImage() {
+        return idToPath(keeper.getRandom().getID());
+    }
 }

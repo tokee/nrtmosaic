@@ -151,6 +151,8 @@ http://localhost:8080/gui/
 ### Get samples at Statsbiblioteket
 curl 'http://prod-search03:56708/aviser/sbsolr/collection1/select?q=page_pixels%3A%5B20000000+TO+*%5D+AND+py%3A%5B1850+TO+1910%5D+AND+hest+AND+recordBase%3Adoms_aviser&rows=1000&fl=pageUUID&wt=csv&indent=true' | grep -v pageUUID  | cut -d: -f3 > samples 
 
+Approximate cache generation speed @ Statsbiblioteket with image-server as source: 16:02-16:40? 19K ~> 500/min.
+It follows that 2M images would take ~3 days to process
 
 ### TIFF
 http://iipimage.sourceforge.net/documentation/images/

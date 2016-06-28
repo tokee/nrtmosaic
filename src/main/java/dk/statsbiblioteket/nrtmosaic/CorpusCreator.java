@@ -33,6 +33,7 @@ public class CorpusCreator {
 
     public static final int MAX_LEVEL = Config.getInt("pyramid.maxlevel"); // 128x128
     public static final Util.FILL_STYLE fillStyle = Util.FILL_STYLE.valueOf(Config.getString("tile.fill.style"));
+    private int pyramidCount = 0;
 
     public static void main(String[] argsA) throws IOException {
         List<String> args = Arrays.asList(argsA);
@@ -254,7 +255,7 @@ public class CorpusCreator {
                 }
             }
         }
-        log.debug("Created " + pyramid);
+        log.debug("Created #" + ++pyramidCount + ": " + pyramid);
         return pyramid;
     }
 }

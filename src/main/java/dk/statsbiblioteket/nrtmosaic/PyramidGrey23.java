@@ -86,7 +86,9 @@ public class PyramidGrey23 {
         this.byteCount = tileOffsets[maxTileLevel+1];
         byte[] data = new byte[byteCount];
 
-        try (FileInputStream fis = new FileInputStream(dat.toFile())) {
+        FileInputStream fis = null;
+        try  {
+            fis = new FileInputStream(dat.toFile());
             int read = 0;
             while (read < byteCount) {
                 int r = fis.read(data, origo+read, byteCount-read);
@@ -97,6 +99,10 @@ public class PyramidGrey23 {
             }
             if (read != byteCount) {
                 throw new IOException("Expected " + byteCount + " bytes from '" + dat + "' but got only " + read);
+            }
+        } finally {
+            if (fis != null) {
+                fis.close();
             }
         }
         this.data = ByteBuffer.wrap(data, origo, byteCount);

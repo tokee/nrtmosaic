@@ -234,4 +234,21 @@ public class Keeper {
         return sb.toString();
     }
 
+    /**
+     * @return a random Pyramid from the full collection of Pyramids.
+     */
+    public PyramidGrey23 getRandom() {
+        Random random = new Random();
+        List<List<PyramidGrey23>> defined = new ArrayList<>(pyramidsTop.size());
+        for (List<PyramidGrey23> pList: pyramidsTop) {
+            if (!pList.isEmpty()) {
+                defined.add(pList);
+            }
+        }
+        if (defined.isEmpty()) {
+            throw new IllegalStateException("No pyramids defined");
+        }
+        List<PyramidGrey23> pList = defined.get(random.nextInt(defined.size()));
+        return pList.get(random.nextInt(pList.size()));
+    }
 }
