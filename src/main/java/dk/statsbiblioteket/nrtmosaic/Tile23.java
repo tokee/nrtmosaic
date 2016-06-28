@@ -46,11 +46,22 @@ public class Tile23 {
 
     /**
      * Maps the pixels in the input image into Pyramids provided by the keeper.
+     * Note: For better mosaic diversity, use {@link #createTile(BufferedImage, Keeper, Random)} instead.
      * @param source the image to be mapped to Pyramids.
      * @param keeper available pyramids.
      * @return a tile containing the mapping from source to Pyramids.
      */
     public static Tile23 createTile(BufferedImage source, Keeper keeper) {
+        return createTile(source, keeper, new Random(87));
+    }
+    /**
+     * Maps the pixels in the input image into Pyramids provided by the keeper.
+     * @param source the image to be mapped to Pyramids.
+     * @param keeper available pyramids.
+     * @param random a Random seeded specifically to the source (e.g. use the hash of the source URL).
+     * @return a tile containing the mapping from source to Pyramids.
+     */
+    public static Tile23 createTile(BufferedImage source, Keeper keeper, Random random) {
         if (source.getWidth() != edge || source.getHeight() != edge) {
             throw new IllegalArgumentException(
                     "Width and height should be equal to " + edge + ", but image dimensions were (" +
@@ -58,7 +69,6 @@ public class Tile23 {
         }
         long startNS = System.nanoTime();
         Tile23 tile = new Tile23();
-        Random random = new Random(87); // Same seed every time! If not, zooming out & in again will change tile mapping
 
         int[] pixels = new int[edge*edge];
         source.getRaster().getPixels(0, 0, edge, edge, pixels);

@@ -22,6 +22,7 @@ import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.net.URL;
 import java.util.Map;
+import java.util.Random;
 
 /**
  *
@@ -93,7 +94,7 @@ public class TileProvider {
                       " pixels to " + edge + "x" + edge + " pixels with fill " + fillGrey);
             image = Util.pad(image, edge, edge, fillGrey);
         }
-        tile = Tile23.createTile(image, keeper);
+        tile = Tile23.createTile(image, keeper, new Random(source.hashCode()));
         tileCache.put(source, tile);
         log.debug("Mapped tile for source=" + source + " in " + (System.nanoTime()-startTime)/1000000 + "ms");
         return tile;

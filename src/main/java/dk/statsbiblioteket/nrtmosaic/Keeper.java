@@ -32,17 +32,12 @@ import java.util.*;
 public class Keeper {
     private static Log log = LogFactory.getLog(Keeper.class);
 
-    // TODO: This could be much more efficiently packed as just a single byte[]
-    private final List<List<PyramidGrey23>> pyramidsTop = new ArrayList<>(256);
-    private final List<List<PyramidGrey23>> pyramidsBottom = new ArrayList<>(256);
-    private final Map<UUID, PyramidGrey23> pyramids = new HashMap<>();
+    private final int bucketSize; // Should be a power of two
+    private final int bucketCount; // 256/bucketSize
+    private final List<List<PyramidGrey23>> pyramidsTop;
+    private final List<List<PyramidGrey23>> pyramidsBottom;
+    private final Map<UUID, PyramidGrey23> pyramids;
 
-    {
-        for (int i = 0 ; i < 256 ; i++) {
-            pyramidsTop.add(new ArrayList<>());
-            pyramidsBottom.add(new ArrayList<>());
-        }
-    }
 
     public Keeper() {
         this(Paths.get(Config.getString("pyramid.cache"), Config.getString("tile.fill.style")));
@@ -51,9 +46,22 @@ public class Keeper {
     // /tmp/pyramid_test1631652512768907712/ 02/ 82/ 02823b5f223a41249913985cb5ad815f.dat
     public Keeper(Path root) {
         long startTime = System.nanoTime();
+        bucketSize = Config.getInt("pyramid.bucketsize");
+        bucketCount = 256%bucketSize != 0 ? 256/bucketSize+1 : 256/bucketSize;
+        pyramidsTop = new ArrayList<>(bucketCount);
+        pyramidsBottom = new ArrayList<>(bucketCount);
+        pyramids = new HashMap<>();
+        {
+            for (int i = 0 ; i < bucketCount ; i++) {
+                pyramidsTop.add(new ArrayList<>());
+                pyramidsBottom.add(new ArrayList<>());
+            }
+        }
+
         loadFromConcatenations(root);
         //loadFromIndividualFiles(root);
-        log.info("Finished loading " + size() + " pyramids in " + (System.nanoTime() - startTime) / 1000000 + "ms");
+        log.info("Finished loading " + size() + " pyramids into buckets " + listBuckets() + " in " +
+                 (System.nanoTime() - startTime) / 1000000 + "ms");
     }
 
     private void loadFromConcatenations(Path root) {
@@ -115,7 +123,8 @@ public class Keeper {
     }
 
     private void sortPyramids() {
-        for (int i = 0 ; i < 256 ; i++) {
+        for (int i = 0 ; i < bucketCount ; i++) {
+            // TODO: Extend the sort to use primaries first
             Collections.sort(pyramidsTop.get(i), (o1, o2) -> o2.getTopSecondary()-o1.getTopSecondary());
             Collections.sort(pyramidsBottom.get(i), (o1, o2) -> o2.getBottomSecondary()-o1.getBottomSecondary());
         }
@@ -179,9 +188,9 @@ public class Keeper {
 
     private List<PyramidGrey23> getClosest(List<List<PyramidGrey23>> pyramids, final int ideal, Random random) {
         int delta = -1;
-        while (delta++ < 512) { // Linear search out from origo
-            int index = ideal + (((delta & 1) == 1 ? -1 : 1) * delta/2);
-            if (index < 0 || index > 255) {
+        while (delta++ < bucketCount*2) { // Linear search out from origo
+            int index = ideal/bucketSize + (((delta & 1) == 1 ? -1 : 1) * delta/2);
+            if (index < 0 || index >= bucketCount) {
                 continue;
             }
             if (!pyramids.get(index).isEmpty()) {
@@ -207,9 +216,22 @@ public class Keeper {
     }
 
     private void addPyramid(PyramidGrey23 pyramid) {
-        pyramidsTop.get(pyramid.getTopPrimary()).add(pyramid);
-        pyramidsBottom.get(pyramid.getBottomPrimary()).add(pyramid);
+        pyramidsTop.get(pyramid.getTopPrimary()/bucketSize).add(pyramid);
+        pyramidsBottom.get(pyramid.getBottomPrimary()/bucketSize).add(pyramid);
         pyramids.put(pyramid.getID(), pyramid);
+    }
+
+    private String listBuckets() {
+        StringBuffer sb = new StringBuffer();
+        int bucketStart = 0;
+        for (int bucket = 0 ; bucket < bucketCount ; bucket++) {
+            if (bucket != 0) {
+                sb.append(", ");
+            }
+            sb.append(bucketStart).append("(").append(pyramidsTop.get(bucket).size()).append(")");
+            bucketStart += bucketSize;
+        }
+        return sb.toString();
     }
 
 }
