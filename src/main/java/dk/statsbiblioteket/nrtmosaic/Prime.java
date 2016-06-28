@@ -174,7 +174,7 @@ public class Prime {
             throw new IIOException("Unable to read '" + external + "' as an image", e);
         } finally {
             log.debug("deepzoom basic tile for " + deepZoomSnippet + ", pad=" + pad + " piped in " +
-                      (System.nanoTime()-startTime) + "ms");
+                      (System.nanoTime()-startTime)/1000000 + "ms");
         }
     }
 
