@@ -1,12 +1,16 @@
 package dk.statsbiblioteket.nrtmosaic;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.junit.Test;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import static org.junit.Assert.*;
 
@@ -25,7 +29,28 @@ import static org.junit.Assert.*;
  *
  */
 public class PrimeTest {
+    private static Log log = LogFactory.getLog(PrimeTest.class);
+
     final String BASE = "/avis-show/symlinks/9/c/0/5/9c05d958-b616-47c1-9e4f-63ec2dd9429e.jp2_files/";
+
+    @Test
+    public void testDZI() {
+        final String DZI = "/avis-show/symlinks/9/c/0/5/9c05d958-b616-47c1-9e4f-63ec2dd9429e.jp2.dzi";
+        String actual = Prime.instance().getDZI(DZI);
+        log.debug("Got DZI response\n" + actual);
+        assertTrue("A DZI structure should be returned", actual.contains("Width"));
+    }
+
+    @Test
+    public void testRandomImage() {
+        int RUNS = 100;
+        Set<String> randomIDs = new HashSet<>(RUNS);
+        for (int i = 0 ; i < RUNS ; i++) {
+            randomIDs.add(Prime.instance().getRandomImage());
+        }
+        assertFalse("There should be some random IDs", randomIDs.isEmpty());
+        assertTrue("There should be more than 1 random ID", randomIDs.size() > 1);
+    }
 
     @Test
     public void testKnownProblem() throws IOException {

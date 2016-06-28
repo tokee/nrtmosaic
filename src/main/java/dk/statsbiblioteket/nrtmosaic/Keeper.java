@@ -176,7 +176,13 @@ public class Keeper {
     }
     public PyramidGrey23 getPyramid(String origin) {
         try {
-            return getPyramid(new UUID(origin));
+            UUID id = new UUID(origin);
+            PyramidGrey23 pyramid = getPyramid(id);
+            if (pyramid == null) {
+                log.warn("Unable to locate pyramid for resolved id '" + id.toHex() +"' from source '" + origin + "'");
+                return null;
+            }
+            return pyramid;
         } catch (IllegalArgumentException e) {
             log.warn("getPyramid(" + origin + "): Unable to extract UUID");
         }

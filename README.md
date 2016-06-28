@@ -148,6 +148,14 @@ http://localhost:8080/nrtmosaic/services/image?source=foo&x=1&y=1&z=1
 Sample GUI:
 http://localhost:8080/gui/
 
+If the gui is not served from the tomcat, either CORS must be enabled or the tomcat must be mounted
+under the front end server. For apache httpd that is done with
+mod_jk: https://tomcat.apache.org/connectors-doc/webserver_howto/apache.html
+http://thetechnocratnotebook.blogspot.dk/2012/05/installing-tomcat-7-and-apache2-with.html
+
+mod_proxy_ajp seems simplest to use:
+http://httpd.apache.org/docs/2.2/mod/mod_proxy_ajp.html
+
 ### Get samples at Statsbiblioteket
 curl 'http://prod-search03:56708/aviser/sbsolr/collection1/select?q=page_pixels%3A%5B20000000+TO+*%5D+AND+py%3A%5B1850+TO+1910%5D+AND+hest+AND+recordBase%3Adoms_aviser&rows=1000&fl=pageUUID&wt=csv&indent=true' | grep -v pageUUID  | cut -d: -f3 > samples 
 
