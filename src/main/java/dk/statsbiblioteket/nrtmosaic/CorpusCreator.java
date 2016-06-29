@@ -28,7 +28,7 @@ import java.util.Arrays;
 import java.util.List;
 
 public class CorpusCreator {
-    private static Log log = LogFactory.getLog(CorpusCreator.class);
+    private static final Log log = LogFactory.getLog(CorpusCreator.class);
     private static boolean cacheGenerated = false;
 
     public static final int MAX_LEVEL = Config.getInt("pyramid.maxlevel"); // 128x128

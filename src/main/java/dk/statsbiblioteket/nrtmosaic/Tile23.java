@@ -25,7 +25,7 @@ import java.util.Random;
  * The 23 in the name refers to the aspect ratio of the Pyramids.
  */
 public class Tile23 {
-    private static Log log = LogFactory.getLog(Tile23.class);
+    private static final Log log = LogFactory.getLog(Tile23.class);
 
     public static final int edge = Config.getInt("tile.edge");
      // Potential optimization: 1/3 of these are always empty.
@@ -172,7 +172,7 @@ public class Tile23 {
             }
         }
         reuse.getRaster().setPixels(0, 0, edge, edge, canvas);
-        log.trace("Rendered tile for " + subTileX + "x" + subTileY + ", level " + level + " in " +
+        log.debug("Rendered tile for " + subTileX + "x" + subTileY + ", level " + level + " in " +
                   (System.nanoTime() - startNS) / 1000000 + "ms");
         return reuse;
     }

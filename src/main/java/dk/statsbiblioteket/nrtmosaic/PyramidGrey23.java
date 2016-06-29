@@ -28,14 +28,15 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 
 /**
- * Representations of a greyscale image of aspect ration 2:3 at different zoom levels.
+ * Representations of a greyscale image of aspect ratio 2:3 at different zoom levels.
  * </p><p>
  * The image consists of 6 tiles.
  * </p>
  */
 public class PyramidGrey23 {
-    private static Log log = LogFactory.getLog(PyramidGrey23.class);
-    private final ByteBuffer data;
+    private static final Log log = LogFactory.getLog(PyramidGrey23.class);
+
+    private final ByteBuffer backingData;
     private final int origo;
     private final int maxTileLevel; // 1:1x1, 2:2x2, 4:4x4, 5:16x16, 6:32:32, 7:64x64, 8:128x128
     private final int byteCount; // Number of significant bytes in data
@@ -66,19 +67,23 @@ public class PyramidGrey23 {
             tileEdges[level] = lastSize;
         }
     }
+    public static final int MEM_DATA_LEVEL = 2; // Memory cache up to and including tile level 2 (2x2 * 6 pixels)
+    private final int memDataSize = tileOffsets[MEM_DATA_LEVEL+2];
+    private final byte[] memData = new byte[memDataSize];
+
 
     public PyramidGrey23(int maxTileLevel) {
         this.maxTileLevel = maxTileLevel;
         this.byteCount = tileOffsets[maxTileLevel+1];
-        this.data = ByteBuffer.allocate(byteCount);
+        this.backingData = ByteBuffer.allocate(byteCount);
         this.origo = 0;
     }
-    private PyramidGrey23(byte[] data, int origo, int maxTileLevel) {
+/*    private PyramidGrey23(byte[] data, int origo, int maxTileLevel) {
         this.maxTileLevel = maxTileLevel;
         this.byteCount = tileOffsets[maxTileLevel+1];
         this.data = ByteBuffer.wrap(data, origo, byteCount);
         this.origo = origo;
-    }
+    }*/
 
     private PyramidGrey23(int maxTileLevel, Path dat) throws IOException {
         this.origo = 0;
@@ -105,14 +110,16 @@ public class PyramidGrey23 {
                 fis.close();
             }
         }
-        this.data = ByteBuffer.wrap(data, origo, byteCount);
+        this.backingData = ByteBuffer.wrap(data, origo, byteCount);
+        syncMemData();
     }
 
     public PyramidGrey23(MappedByteBuffer buffer, int origo, int maxTileLevel) {
         this.maxTileLevel = maxTileLevel;
         this.byteCount = tileOffsets[maxTileLevel+1];
-        this.data = buffer;
+        this.backingData = buffer;
         this.origo = origo;
+        syncMemData();
     }
 
     public PyramidGrey23 createNew(Path dat) throws IOException {
@@ -128,6 +135,27 @@ public class PyramidGrey23 {
         return new PyramidGrey23(buffer, offset, maxTileLevel);
     }
 
+    public final void setByte(int index, byte value) {
+        backingData.put(origo+index, value);
+        if (index-origo < memDataSize) {
+            memData[index-origo] = value;
+        }
+    }
+    public final void setByte(int index, long value) {
+        setByte(index, (byte)value);
+    }
+    public final void setByte(int index, int value) {
+        setByte(index, (byte)value);
+    }
+    public final byte getByte(int index) {
+        return index < memDataSize ? memData[index] : backingData.get(origo+index);
+    }
+    public final int getByteAsInt(int index) {
+        return 0xFF & getByte(index);
+    }
+    public final long getByteAsLong(int index) {
+        return 0xFF & getByte(index);
+    }
 
     public PyramidGrey23 setID(UUID id) {
         setLong(IDPART1_INDEX, id.getFirst64());
@@ -135,10 +163,10 @@ public class PyramidGrey23 {
         return this;
     }
     public void setAverageGrey(int averageGrey) {
-        data.put(origo+ AVERAGE_GREY_INDEX, (byte)averageGrey);
+        setByte(AVERAGE_GREY_INDEX, averageGrey);
     }
     public int getAverageGrey() {
-        return 0xFF & data.get(origo+ AVERAGE_GREY_INDEX);
+        return getByteAsInt(AVERAGE_GREY_INDEX);
     }
     public void setSourceSize(int width, int height) {
         log.trace("Setting source size " + width + "x" + height);
@@ -154,25 +182,25 @@ public class PyramidGrey23 {
 
     private void setShort(int offset, long value) {
         for (int i = 0; i < 2; ++i) {
-          data.put(origo+offset+i, (byte) (value >>> (2-i-1 << 3)));
+          setByte(offset+i, value >>> (2-i-1 << 3));
         }
     }
     private short getShort(int offset) {
         long value = 0;
         for (int i = 0; i < 2; i++) {
-            value |= (long)(0xFF&data.get(origo+offset+i)) << (2-i-1 << 3);
+            value |= (long)(getByteAsInt(offset+i)) << (2-i-1 << 3);
         }
         return (short) value;
     }
     public void setLong(int offset, long value) { // TODO: Change get & set of atomics to ByteBuffer native
         for (int i = 0; i < 8; ++i) {
-          data.put(origo+offset+i, (byte) (value >>> (8-i-1 << 3)));
+          setByte(offset+i, value >>> (8-i-1 << 3));
         }
     }
     public long getLong(int offset) {
         long value = 0;
         for (int i = 0; i < 8; i++) {
-            value |= (long)(0xFF&data.get(origo+offset+i)) << (8-i-1 << 3);
+            value |= (long)(getByteAsInt(offset+i)) << (8-i-1 << 3);
         }
         return value;
     }
@@ -205,40 +233,40 @@ public class PyramidGrey23 {
     // 1: 1x1
     // 2: 2x2
     // 3: 4x4
-    public int getTilesOffset(int level) {
+    public static int getTilesOffset(int level) {
 //        if (level > maxTileLevel) {
 //            throw new IllegalArgumentException("Requested tileLevel=" + level + " with maxTileLevel=" + maxTileLevel);
 //        }
         return tileOffsets[level];
     }
 
-    public int getTileOffset(int level, int fx, int fy) {
+    public static int getTileOffset(int level, int fx, int fy) {
         final int edge = getTileEdge(level);
         final int blockSize = edge*edge;
         return getTilesOffset(level) + (fx * blockSize) + (fy * 2 * blockSize);
     }
 
-    public int getTileEdge(int level) {
+    public static int getTileEdge(int level) {
         return tileEdges[level];
     }
 
     public int getTopPrimary() { // ([0,0]+[0,1]+[1,0]+[1,1])/4
-        final int index = origo+getTilesOffset(1);
-        return ((0xFF&data.get(index)) + (0xFF&data.get(index+1)) + (0xFF&data.get(index+2)) +
-                (0xFF&data.get(index+3))) / 4;
+        final int index = getTilesOffset(1);
+        return (getByteAsInt(index) + getByteAsInt(index+1) + getByteAsInt(index+2) +
+                getByteAsInt(index+3)) / 4;
     }
     public int getTopSecondary() { // ([2,0]+[2,1])/4
-        final int index = origo+getTilesOffset(1);
-        return ((0xFF&data.get(index+4)) + (0xFF&data.get(index+5))) / 2;
+        final int index = getTilesOffset(1);
+        return (getByteAsInt(index+4) + getByteAsInt(index+5)) / 2;
     }
     public int getBottomPrimary() { // ([1,0]+[1,1]+[2,0]+[2,1])/4
-        final int index = origo+getTilesOffset(1);
-        return ((0xFF&data.get(index+2)) + (0xFF&data.get(index+3)) + (0xFF&data.get(index+4)) +
-                (0xFF&data.get(index+5))) / 4;
+        final int index = getTilesOffset(1);
+        return (getByteAsInt(index+2) + getByteAsInt(index+3) + getByteAsInt(index+4) +
+                getByteAsInt(index+5)) / 4;
     }
     public int getBottomSecondary() { // ([0,0]+[0,1])/4
-        final int index = origo+getTilesOffset(1);
-        return ((0xFF&data.get(index)) + (0xFF&data.get(index+1))) / 2;
+        final int index = getTilesOffset(1);
+        return (getByteAsInt(index) + getByteAsInt(index+1)) / 2;
     }
 
     @Override
@@ -269,8 +297,8 @@ public class PyramidGrey23 {
         log.debug("Storing " + this + " as " + full);
         try (FileOutputStream fos = new FileOutputStream(full.toFile())) {
             WritableByteChannel channel = Channels.newChannel(fos);
-            data.position(origo);
-            channel.write(data); // TODO: Only write bytecount bytes
+            backingData.position(origo);
+            channel.write(backingData); // TODO: Only write bytecount bytes
 //            fos.write(data.array(), origo, byteCount);
         }
         return true;
@@ -278,8 +306,8 @@ public class PyramidGrey23 {
 
     public synchronized void store(FileOutputStream outputStream) throws IOException {
         WritableByteChannel channel = Channels.newChannel(outputStream);
-        data.position(origo);
-        channel.write(data); // TODO: Only write bytecount bytes
+        backingData.position(origo);
+        channel.write(backingData); // TODO: Only write bytecount bytes
     }
 
     public Path getFullPath(Path root, UUID id) {
@@ -293,8 +321,14 @@ public class PyramidGrey23 {
         final int tileOffset = getTileOffset(level, fx, fy);
         final int blockSize = edge*edge;
 //        log.debug(this.data.array().length + " - " + (origo+tileOffset) + " - " + blockSize);
-        this.data.position(origo+tileOffset);
-        this.data.put(data, 0, blockSize);
+        backingData.position(origo+tileOffset);
+        backingData.put(data, 0, blockSize);
+        syncMemData();
+    }
+
+    private synchronized void syncMemData() {
+        backingData.position(origo);
+        backingData.get(memData, 0, memDataSize);
     }
 
     /**
@@ -315,11 +349,11 @@ public class PyramidGrey23 {
             for (int tx = 0; tx < tileEdge; tx++) {
                 if (origoX+tx < canvasWidth) {
                     final int canvasIndex = (origoY + ty) * canvasWidth + origoX + tx;
-                    final int dataIndex = origo + tileOffset + (ty * tileEdge) + tx;
+                    final int dataIndex = tileOffset + (ty * tileEdge) + tx;
                     // Overflow is clipped
-                    if (canvasIndex < canvas.length && canvasIndex >= 0 && dataIndex < origo+byteCount
+                    if (canvasIndex < canvas.length && canvasIndex >= 0 && dataIndex < byteCount
                         && dataIndex >= 0) {
-                        canvas[canvasIndex] = 0xFF & data.get(dataIndex);
+                        canvas[canvasIndex] = getByteAsInt(dataIndex);
                     }
                 }
             }

@@ -60,8 +60,11 @@ public class UUID {
                h8(second64>>>32) + h8(second64 & ~(~1L << 31));
     }
 
+//    private static final String[] PREFIX0 = new String[]{
+//            "00000000", "0000000", "000000", "00000", "0000", "000", "00", "0", ""};
     private String h8(long value) {
         String in = Long.toString(value, 16);
+//        return PREFIX0[in.length()] + in;
         while (in.length() < 8) {
             in = "0" + in;
         }

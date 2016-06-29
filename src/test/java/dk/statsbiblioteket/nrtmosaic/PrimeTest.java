@@ -35,7 +35,7 @@ public class PrimeTest {
 
     @Test
     public void testDZI() {
-        final String DZI = "/avis-show/symlinks/9/c/0/5/9c05d958-b616-47c1-9e4f-63ec2dd9429e.jp2.dzi";
+        final String DZI = "/avis-show/symlinks/9/c/0/5/9c05d958-b616-47c19e4f-63ec2dd9429e.jp2.dzi";
         String actual = Prime.instance().getDZI(DZI);
         log.debug("Got DZI response\n" + actual);
         assertTrue("A DZI structure should be returned", actual.contains("Width"));
