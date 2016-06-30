@@ -58,12 +58,12 @@ public class NrtmosaicResource implements ServletContextListener {
 
     @GET
     @Path("/image/deepzoom/")
-    @Produces({"image/jpeg", "text/plain"})
+    @Produces({"image/jpeg", "application/xml"})
     public Response getImageDeepzoom(@QueryParam("GAM") String gam, @QueryParam("CNT") String cnt,
                                      @QueryParam("DeepZoom") String deepZoom) throws ServiceException {
         try {
             if (deepZoom.contains(".dzi")) {
-                return Response.ok(Prime.instance().getDZI(deepZoom), MediaType.TEXT_PLAIN).build();
+                return Response.ok(Prime.instance().getDZI(deepZoom), MediaType.APPLICATION_XML).build();
             }
 
             BufferedImage image = Prime.instance().deepzoom(deepZoom, gam, cnt);

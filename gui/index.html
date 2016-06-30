@@ -5,7 +5,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     <title>NRT-Mosaic demo</title>
     <link rel="stylesheet" type="text/css" href="nrtmosaic.css" />
-    <script src="openseadragon.min.js"></script>
+    <script src="openseadragon.js"></script>
 </head>
 
 <body class="previewpage">
@@ -23,7 +23,9 @@
     prefixUrl:     "images/",
     showNavigator:  false,
     wrapHorizontal: false,
-    
+
+    test_tileSources: "http://tokemon.sb.statsbiblioteket.dk:8080/nrtmosaic/services/image/deepzoom/?GAM=2.0&CNT=1.1&DeepZoom=/avis-show/symlinks/f/f/7/f/ff7fdc6f-df8f-4b7d-a835-cd2b37e4d651.jp2.dzi",
+
     tileSources: {
     Image: {
         xmlns:    "http://schemas.microsoft.com/deepzoom/2008",
@@ -31,7 +33,7 @@
         Format:   "jpg",
         Overlap:  "0",
         TileSize: "256",
-        Size: {
+        Size: {           // 4147x5974
             // Could this just be MAX_INTEGER?
             Width:  4588*Math.pow(2, 29),
             Height: 6623*Math.pow(2, 29),

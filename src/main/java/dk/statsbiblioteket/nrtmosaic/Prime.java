@@ -316,12 +316,14 @@ public class Prime {
             throw new NullPointerException("Unable to locate a pyramid for input '" + deepZoom + "'");
         }
         long dziFactor = Config.getLong("prime.dzifactor");
-        final long width = dziFactor*pyramid.getSourceWidth();
-        final long height = dziFactor*pyramid.getSourceHeight();
+        log.info("Calc: " + pyramid.getSourceWidth() * dziFactor + "x" + pyramid.getSourceHeight() * dziFactor);
+        final long width = (long) (Math.pow(2, dziFactor) * pyramid.getSourceWidth() * dziFactor);
+        final long height = (long) (Math.pow(2, dziFactor) * pyramid.getSourceHeight() * dziFactor);
+        // TODO: Add check for overflow with JavaScript Double.MAX_INTEGER
         return String.format("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
                              "<Image xmlns=\"http://schemas.microsoft.com/deepzoom/2008\"\n" +
                              "       Format=\"jpg\" Overlap=\"0\" TileSize=\"256\" >\n" +
-                             "    <Size Height=\"%d\" Width=\"%d\"/>\n" +
+                             "    <Size Width=\"%d\" Height=\"%d\"/>\n" +
                              "</Image>", width, height);
     }
 
