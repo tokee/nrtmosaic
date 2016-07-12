@@ -261,22 +261,56 @@ public class PyramidGrey23 {
     }
 
     public int getTopPrimary() { // ([0,0]+[0,1]+[1,0]+[1,1])/4
-        final int index = getTilesOffset(1);
-        return (getByteAsInt(index) + getByteAsInt(index+1) + getByteAsInt(index+2) +
-                getByteAsInt(index+3)) / 4;
+        return getMissingAwareAverage(getTilesOffset(1), 4);
     }
     public int getTopSecondary() { // ([2,0]+[2,1])/4
-        final int index = getTilesOffset(1);
-        return (getByteAsInt(index+4) + getByteAsInt(index+5)) / 2;
+        return getMissingAwareAverage(getTilesOffset(1)+4, 2);
     }
     public int getBottomPrimary() { // ([1,0]+[1,1]+[2,0]+[2,1])/4
-        final int index = getTilesOffset(1);
-        return (getByteAsInt(index+2) + getByteAsInt(index+3) + getByteAsInt(index+4) +
-                getByteAsInt(index+5)) / 4;
+        return getMissingAwareAverage(getTilesOffset(1)+2, 4);
     }
     public int getBottomSecondary() { // ([0,0]+[0,1])/4
-        final int index = getTilesOffset(1);
-        return (getByteAsInt(index) + getByteAsInt(index+1)) / 2;
+        return getMissingAwareAverage(getTilesOffset(1), 2);
+    }
+    private int getMissingAwareAverage(int offset, int length) {
+        int count = 0;
+        int sum = 0;
+        for (int i = offset ; i < offset+length ; i++) {
+            int grey = getByteAsInt(i);
+            if (grey != Util.MISSING_GREY) {
+                sum += grey;
+                count++;
+            }
+        }
+        return count == 0 ? Util.MISSING_GREY : sum/count;
+    }
+
+    // TODO: This does not take into account that topPrimary is likely to be less affectable than topSecondary
+    public Range getPossibleAverages() {
+        int overallAverage = getMissingAwareAverage(getTilesOffset(1), getFractionWidth()*getFractionHeight());
+        if (overallAverage == Util.MISSING_GREY) {
+            return new Range(0, 255);
+        }
+        // average = overallAverage*(1-getMissingPixelsFraction())+dynamic*getMissingPixelsFraction()
+        return new Range(Math.max(0, (int) (overallAverage * (1 - getMissingPixelsFraction()))),
+                         Math.min(255, (int) (overallAverage*(1-getMissingPixelsFraction()) +
+                                              255*getMissingPixelsFraction())));
+    }
+    public int getDynamic(int wantedAverage) {
+        int overallAverage = getMissingAwareAverage(getTilesOffset(1), getFractionWidth()*getFractionHeight());
+        // wantedAverage = overallAverage*(1-getMissingPixelsFraction())+dynamic*getMissingPixelsFraction()
+        double dynamicGrey = (wantedAverage-overallAverage*(1-getMissingPixelsFraction()))/getMissingPixelsFraction();
+        return (int) Math.max(0, Math.min(255, dynamicGrey));
+    }
+
+    public static final class Range {
+        public final int from;
+        public final int to;
+
+        public Range(int from, int to) {
+            this.from = from;
+            this.to = to;
+        }
     }
 
     @Override
@@ -356,8 +390,10 @@ public class PyramidGrey23 {
      * @param origoX      upper left corner X.
      * @param origoY      upper left corner Y.
      * @param canvasWidth the width of the canvas (needed for calculating canvas y). Height is assumes to be the same.
+     * @param missingReplacement if a pixel is marked as missing, it will be filled with this grey.
      */
-    public void copyPixels(int level, int fx, int fy, int[] canvas, int origoX, int origoY, int canvasWidth) {
+    public void copyPixels(
+            int level, int fx, int fy, int[] canvas, int origoX, int origoY, int canvasWidth, int missingReplacement) {
         // TODO Special case level 0
         final int tileEdge = getTileEdge(level);
         final int tileOffset = getTileOffset(level, fx, fy);
@@ -369,7 +405,8 @@ public class PyramidGrey23 {
                     // Overflow is clipped
                     if (canvasIndex < canvas.length && canvasIndex >= 0 && dataIndex < byteCount
                         && dataIndex >= 0) {
-                        canvas[canvasIndex] = getByteAsInt(dataIndex);
+                        int grey = getByteAsInt(dataIndex);
+                        canvas[canvasIndex] = grey == Util.MISSING_GREY ? missingReplacement : grey;
                     }
                 }
             }

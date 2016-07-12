@@ -30,9 +30,11 @@ public class Tile23 {
     public static final int edge = Config.getInt("tile.edge");
      // Potential optimization: 1/3 of these are always empty.
     private final PyramidGrey23[] pyramids = new PyramidGrey23[edge*edge];
+    private final byte[] dynamicGreys = new byte[edge*edge];
 
-    public void setPyramid(int x, int y, PyramidGrey23 pyramid) {
+    public void setPyramid(int x, int y, PyramidGrey23 pyramid, int wantedAverage) {
         pyramids[y*edge+x] = pyramid;
+        dynamicGreys[y*edge+x] = (byte) pyramid.getDynamic(wantedAverage);
     }
 
     public PyramidGrey23 getPyramid(int x, int y) {
@@ -41,6 +43,15 @@ public class Tile23 {
         } catch (ArrayIndexOutOfBoundsException e) {
             throw new ArrayIndexOutOfBoundsException(
                     "OutOfBounds while requesting pyramid at " + x + "x" + y + " from a tile of " + edge + "x" + edge);
+        }
+    }
+    public int getDynamic(int x, int y) {
+        switch (Util.DEFAULT_FILL_STYLE) {
+            case fixed:   return Util.FILL_COLOR_INT;
+            case average: return getPyramid(x, y).getAverageGrey();
+            case dynamic: return 0xFF & dynamicGreys[y*edge+x];
+            default: throw new UnsupportedOperationException(
+                    "The fill style '" + Util.DEFAULT_FILL_STYLE +"' is not supported yet");
         }
     }
 
@@ -84,7 +95,7 @@ public class Tile23 {
                     for (int x = 0 ; x < edge ; x++) {
                         int primary = pixels[y*edge + x];
                         int secondary = pixels[(y+1)*edge + x];
-                        tile.setPyramid(x, y, keeper.getClosestTop(primary, secondary, random));
+                        tile.setPyramid(x, y, keeper.getClosestTop(primary, secondary, random), primary);
                     }
                     break;
                 }
@@ -92,7 +103,7 @@ public class Tile23 {
                     for (int x = 0; x < edge; x++) {
                         int primary = pixels[y * edge + x];
                         int secondary = pixels[(y - 1) * edge + x];
-                        tile.setPyramid(x, y, keeper.getClosestBottom(primary, secondary, random));
+                        tile.setPyramid(x, y, keeper.getClosestBottom(primary, secondary, random), primary);
                     }
                 }
             }
@@ -132,6 +143,7 @@ public class Tile23 {
         final int startY = subTileY*(edge>>shift);
 //        final int zoomFactor = 1<<shift;
         final int levelEdge = edge>>shift ;
+        // TODO: Special-case level 1 as it needs its pixels adjusted instead of just the missing replaced
 //        log.debug("Rendering source cutout (" + startX + ", " + startY + "), (" +
 //                  (startX+levelEdge) + ", " + (startY+levelEdge) + ") with zoomFactor=" + zoomFactor +
 //                  " and levelEdge=" + levelEdge);
@@ -149,7 +161,7 @@ public class Tile23 {
                         if (pyramid == null) {
                             continue; // Bit dangerous as we do not discover if everything is null
                         }
-                        renderTop(pyramid, pyramidLevel, canvas, canvasX, canvasY);
+                        renderTop(pyramid, pyramidLevel, canvas, canvasX, canvasY, getDynamic(sourceX, sourceY));
                         break;
                     }
                     case 2:   // None (1, 4, 7, 10...)
@@ -158,14 +170,15 @@ public class Tile23 {
                         if (pyramidTop == null || pyramidBottom == null) {
                             continue; // Bit dangerous as we do not discover if everything is null
                         }
-                        renderDual(pyramidTop, pyramidBottom, pyramidLevel, canvas, canvasX, canvasY);
+                        renderDual(pyramidTop, pyramidBottom, pyramidLevel, canvas, canvasX, canvasY,
+                                   getDynamic(sourceX, sourceY-1), getDynamic(sourceX, sourceY+1));
                         break;
                     case 1: { // Bottom-up (2, 5, 8, 11...)
                         final PyramidGrey23 pyramid = getPyramid(sourceX, sourceY); // Will be null for y*2%3==2
                         if (pyramid == null) {
                             continue; // Bit dangerous as we do not discover if everything is null
                         }
-                        renderBottom(pyramid, pyramidLevel, canvas, canvasX, canvasY);
+                        renderBottom(pyramid, pyramidLevel, canvas, canvasX, canvasY, getDynamic(sourceX, sourceY));
                         break;
                     }
                 }
@@ -179,9 +192,9 @@ public class Tile23 {
 
     // Render top 2/3 of the Pyramid, which will be square
     private void renderTop(PyramidGrey23 pyramid, final int level, final int[] canvas,
-                           final int canvasOrigoX, final int canvasOrigoY) {
+                           final int canvasOrigoX, final int canvasOrigoY, int dynamic) {
         if (level == 0) {
-            pyramid.copyPixels(1, 0, 0, canvas, canvasOrigoX, canvasOrigoY, edge);
+            pyramid.copyPixels(1, 0, 0, canvas, canvasOrigoX, canvasOrigoY, edge, dynamic);
             return;
         }
         final int pTileEdge = pyramid.getTileEdge(level);
@@ -190,7 +203,8 @@ public class Tile23 {
 
         for (int fy = 0 ; fy < squareSide ; fy++) {
             for (int fx = 0; fx < squareSide; fx++) {
-                pyramid.copyPixels(level, fx, fy, canvas, canvasOrigoX+fx*pTileEdge, canvasOrigoY+fy*pTileEdge, edge);
+                pyramid.copyPixels(
+                        level, fx, fy, canvas, canvasOrigoX+fx*pTileEdge, canvasOrigoY+fy*pTileEdge, edge, dynamic);
             }
         }
     }
@@ -218,9 +232,9 @@ public class Tile23 {
 
     // Render bottom 2/3 of the Pyramid, which will be square
     private void renderBottom(PyramidGrey23 pyramid, final int level, final int[] canvas,
-                              final int canvasOrigoX, final int canvasOrigoY) {
+                              final int canvasOrigoX, final int canvasOrigoY, int dynamic) {
         if (level == 0) {
-            pyramid.copyPixels(1, 0, 1, canvas, canvasOrigoX, canvasOrigoY, edge);
+            pyramid.copyPixels(1, 0, 1, canvas, canvasOrigoX, canvasOrigoY, edge, dynamic);
             return;
         }
         final int pTileEdge = pyramid.getTileEdge(level);
@@ -232,7 +246,7 @@ public class Tile23 {
         for (int fy = height ; fy < fh ; fy++) {
             for (int fx = 0; fx < pyramid.getFractionWidth(); fx++) {
                 pyramid.copyPixels(level, fx, fy, canvas,
-                                   canvasOrigoX+fx*pTileEdge, canvasOrigoY+(fy-height)*pTileEdge, edge);
+                                   canvasOrigoX+fx*pTileEdge, canvasOrigoY+(fy-height)*pTileEdge, edge, dynamic);
             }
         }
 
@@ -241,9 +255,9 @@ public class Tile23 {
 
     // Render bottom 1/3 of pyramidTop and top 1/3 of pyramidBottom, the result should be square
     private void renderDual(PyramidGrey23 pyramidTop, PyramidGrey23 pyramidBottom, final int level, final int[] canvas,
-                              final int canvasOrigoX, final int canvasOrigoY) {
+                              final int canvasOrigoX, final int canvasOrigoY, int dynamicTop, int dynamicBottom) {
         if (level == 0) {
-            pyramidTop.copyPixels(1, 0, 1, canvas, canvasOrigoX, canvasOrigoY, edge); // Should really be average
+            pyramidTop.copyPixels(1, 0, 1, canvas, canvasOrigoX, canvasOrigoY, edge, dynamicTop); // Should really be average
             return;
         }
         final int pTileEdge = pyramidTop.getTileEdge(level);
@@ -256,14 +270,15 @@ public class Tile23 {
         for (int fy = fw ; fy < fh ; fy++) {
             for (int fx = 0; fx < fw; fx++) {
                 pyramidTop.copyPixels(level, fx, fy, canvas,
-                                      canvasOrigoX+fx*pTileEdge, canvasOrigoY+(fy-fw)*pTileEdge, edge);
+                                      canvasOrigoX+fx*pTileEdge, canvasOrigoY+(fy-fw)*pTileEdge, edge, dynamicTop);
             }
         }
         // Top 1/3 of pyramidBottom
         for (int fy = 0 ; fy < fh-fw ; fy++) {
             for (int fx = 0; fx < fw; fx++) {
-                pyramidBottom.copyPixels(level, fx, fy, canvas,
-                                      canvasOrigoX+fx*pTileEdge, canvasOrigoY+(fy+height)*pTileEdge, edge);
+                pyramidBottom.copyPixels(
+                        level, fx, fy, canvas,
+                        canvasOrigoX+fx*pTileEdge, canvasOrigoY+(fy+height)*pTileEdge, edge, dynamicBottom);
             }
         }
         //        debugRect(canvas, canvasOrigoX, canvasOrigoY, canvasOrigoX+2*pTileEdge, canvasOrigoY+2*pTileEdge, 50);
@@ -272,7 +287,7 @@ public class Tile23 {
 
     // Renders the 6 pyramid sub-tiles at the given position of the canvas
     private void render(PyramidGrey23 pyramid, final int level, final int[] canvas,
-                        final int canvasOrigoX, final int canvasOrigoY) {
+                        final int canvasOrigoX, final int canvasOrigoY, int dynamic) {
         if (level == 0) {
             renderZero(pyramid, canvas, canvasOrigoX, canvasOrigoY);
             return;
@@ -282,13 +297,17 @@ public class Tile23 {
 
         for (int fy = 0 ; fy < pyramid.getFractionHeight() ; fy++) {
             for (int fx = 0; fx < pyramid.getFractionWidth(); fx++) {
-                pyramid.copyPixels(level, fx, fy, canvas, canvasOrigoX+fx*pTileEdge, canvasOrigoY+fy*pTileEdge, edge);
+                pyramid.copyPixels(level, fx, fy, canvas, canvasOrigoX+fx*pTileEdge, canvasOrigoY+fy*pTileEdge, edge,
+                                   dynamic);
             }
         }
     }
+
     private void renderZero(PyramidGrey23 pyramid, final int[] canvas, final int canvasOrigoX, final int canvasOrigoY) {
         for (int fy = 0 ; fy < 2 ; fy++) {
-            pyramid.copyPixels(1, 0, fy, canvas, canvasOrigoX, canvasOrigoY+fy, edge);
+            // TODO: Special-case the zero and avoid the ugly default missingReplacement
+            pyramid.copyPixels(1, 0, fy, canvas, canvasOrigoX, canvasOrigoY+fy, edge, Util.FILL_COLOR_INT);
         }
     }
+
 }

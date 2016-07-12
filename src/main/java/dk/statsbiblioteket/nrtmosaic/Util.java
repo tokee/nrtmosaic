@@ -92,9 +92,10 @@ public class Util {
 
     public enum FILL_STYLE {
         fixed,  // Same grey for all tiles
-        average // Average for existing pixels for the full source image
+        average,// Average for existing pixels for the full source image
+        dynamic // Custom for each Pyramid reference, optimizing average grey to match the wanted grey
     }
-    public static final FILL_STYLE  DEFAULT_FILL_STYLE;
+    public static final FILL_STYLE DEFAULT_FILL_STYLE;
     public static final int EDGE;
 
     public static int getAverageGrey(BufferedImage image) {

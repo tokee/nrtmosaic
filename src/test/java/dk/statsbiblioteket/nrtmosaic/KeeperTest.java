@@ -103,7 +103,7 @@ public class KeeperTest {
                             BufferedImage image, int origoX, int origoY) {
         int edge = pyramid.getTileEdge(level);
         int[] pixels = new int[edge*edge];
-        pyramid.copyPixels(level, fx, fy, pixels, 0, 0, edge);
+        pyramid.copyPixels(level, fx, fy, pixels, 0, 0, edge, 0);
         image.getRaster().setPixels(origoX, origoY, edge, edge, pixels);
     }
 
