@@ -17,36 +17,9 @@ package dk.statsbiblioteket.nrtmosaic;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import javax.imageio.ImageIO;
-import java.awt.image.*;
-import java.io.*;
-import java.net.URL;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.Arrays;
-import java.util.List;
-
 public class CorpusCreator {
     private static final Log log = LogFactory.getLog(CorpusCreator.class);
     private static boolean cacheGenerated = false;
-
-    public static final int MAX_LEVEL = Config.getInt("pyramid.maxlevel"); // 128x128
-    public static final Util.FILL_STYLE fillStyle = Util.FILL_STYLE.valueOf(Config.getString("tile.fill.style"));
-    private int pyramidCount = 0;
-
-    public static void main(String[] argsA) throws IOException {
-        List<String> args = Arrays.asList(argsA);
-        if (args.isEmpty()) {
-            System.out.println("Usage: CorpusCreator imagefile*");
-        }
-
-        CorpusCreator cc = new CorpusCreator();
-        for (String arg: args) {
-            URL in = new File(arg).exists() ? new File(arg).toURI().toURL() : new URL(arg);
-            cc.breakDownImage(in);
-        }
-    }
 
     public static synchronized void generateCache() {
         if (cacheGenerated) {
@@ -54,208 +27,22 @@ public class CorpusCreator {
             return;
         }
         cacheGenerated = true;
-        createPyramids();
+
         try {
-            concatenatePyramids();
-        } catch (IOException e) {
-            final String message = "IOException during pyramid concatenation";
-            log.error(message, e);
+            PyramidCreator.create();
+        } catch (Exception e) {
+            final String message = "Exception during pyramid creation";
+            log.fatal(message, e);
+            throw new RuntimeException(message, e);
+        }
+
+        try {
+            PyramidConcatenator.concatenate();
+        } catch (Exception e) {
+            final String message = "Exception during pyramid concatenation";
+            log.fatal(message, e);
             throw new RuntimeException(message, e);
         }
     }
 
-    private static void concatenatePyramids() throws IOException {
-        long startTime = System.nanoTime();
-        final boolean overwrite = Config.getBool("corpuscreator.overwrite");
-        final Path cRoot = getCacheRoot().resolve("concatenated");
-        if (Files.exists(cRoot.resolve("0.dat"))) {
-            if (!overwrite) {
-                log.info("Skipping pyramid concatenation as concats in " + cRoot + " exists and overwrite == false");
-                return;
-            }
-            log.info("Overwriting old pyramid concatenations from " + cRoot + " as overwrite == true");
-            for (int i = 0 ; i < 256 ; i++) {
-                Files.deleteIfExists(cRoot.resolve(i + ".dat"));
-            }
-            log.debug("Old pyramid concatenations removed successfully");
-
-        }
-        log.info("Creating concatenated pyramid data in " + cRoot);
-        final FileOutputStream[] concats = new FileOutputStream[256];
-        if (!Files.exists(cRoot)) {
-            Files.createDirectories(cRoot);
-        }
-        for (int i = 0 ; i < 256 ; i++) {
-            concats[i] = new FileOutputStream(cRoot.resolve(i + ".dat").toFile());
-        }
-        Util.wrappedList(getCacheRoot()).
-                filter(sub1 -> Files.isDirectory(sub1) && sub1.getFileName().toString().length() == 2).
-                forEach(sub1 -> Util.wrappedList(sub1).
-                        filter(sub2 -> Files.isDirectory(sub2) && sub2.getFileName().toString().length() == 2).
-                        forEach(sub2 -> Util.wrappedList(sub2).
-                                filter(dat -> Files.isRegularFile(dat) && dat.toString().endsWith(".dat")).
-                                forEach(pyramidFile -> concatenatePyramid(concats, pyramidFile))));
-        log.debug("Closing concatenate files");
-        for (int i = 0 ; i < 256 ; i++) {
-            concats[i].flush();
-            concats[i].close();
-        }
-        log.info("Finished pyramid concatenation in " + (System.nanoTime()-startTime)/1000000 + "ms");
-    }
-
-    private static void concatenatePyramid(FileOutputStream[] concats, Path pyramidFile) {
-        PyramidGrey23 pyramid;
-        try {
-            if ((pyramid = Config.imhotep.createNew(pyramidFile)) == null) {
-                log.debug("Unable to load pyramid from " + pyramidFile);
-                return;
-            }
-        } catch (Exception e) {
-            log.warn("Unable to load Pyramid from '" + pyramidFile + "'", e);
-            return;
-        }
-        try {
-            pyramid.store(concats[pyramid.getTopPrimary()]);
-        } catch (IOException e) {
-            throw new RuntimeException("IOException storing " + pyramid + " to concat " + pyramid.getTopPrimary());
-        }
-        log.debug("Concatenation grey " + pyramid.getTopPrimary() + " was extended with " + pyramid);
-    }
-
-    private static void createPyramids() {
-        long startTime = System.nanoTime();
-        final boolean overwrite = Config.getBool("corpuscreator.overwrite");
-        final String sString = Config.getString("pyramid.source");
-        log.info("Creating pyramids from sources in " + sString);
-        InputStream source;
-        try {
-            source = Util.resolveURL(sString).openStream();
-        } catch (IOException e) {
-            throw new RuntimeException("Unable to open stream '" + sString + "'");
-        }
-        if (source == null) {
-            log.info("No source available at " + sString);
-            return;
-        }
-        int processed = 0;
-        int created = 0;
-        Path cacheRoot = getCacheRoot();
-        try {
-            log.debug("Retrieving raw corpus images from " + sString);
-            BufferedReader in = new BufferedReader(new InputStreamReader(source, "utf-8"));
-            CorpusCreator cc = new CorpusCreator();
-            String line;
-
-            while ((line = in.readLine()) != null) {
-                if (line.isEmpty() || line.startsWith("#")) {
-                    continue;
-                }
-                processed++;
-                UUID id = new UUID(line);
-                if (!overwrite && Files.exists(Config.imhotep.getFullPath(cacheRoot, id))) {
-                    log.trace("Skipping " + line + " as a pyramid already exists for it");
-                    continue;
-                }
-                PyramidGrey23 pyramid;
-                try {
-                    URL sourceURL = Util.resolveURL(line);
-                    if (sourceURL == null) {
-                        log.warn("Unable to resolve '" + line + "' to URL");
-                        continue;
-                    }
-                    pyramid = cc.breakDownImage(sourceURL);
-                } catch (Exception e) {
-                    log.warn("Unable to create pyramid for '" + line + "'", e);
-                    continue;
-                }
-                pyramid.store(cacheRoot, overwrite);
-                created++;
-            }
-        } catch (UnsupportedEncodingException e) {
-            throw new RuntimeException("utf-8 not supported");
-        } catch (IOException e) {
-            throw new RuntimeException("IOException while reading " + sString, e);
-        }
-        log.info("Pyramid creation finished in " + (System.nanoTime()-startTime)/1000000 + "ms." +
-                 " Newly created: " + created + ", already existing: " + (processed-created) +
-                 ", total images available: " + processed + ", source: " + sString +
-                 ", storing pyramids at " + cacheRoot);
-    }
-
-    private static Path getCacheRoot() {
-        return Paths.get(Config.getString("pyramid.cache"), Config.getString("tile.fill.style"));
-    }
-
-    public PyramidGrey23 breakDownImage(URL in) throws IOException {
-        UUID uuid = new UUID(in.toString());
-
-        final BufferedImage greyImage = Util.toGrey(ImageIO.read(in));
-        final int averageGrey = Util.getAverageGrey(greyImage);
-        final int maxEdge = Config.imhotep.getTileEdge(Config.imhotep.getMaxTileLevel());
-        BufferedImage inImage;
-        switch (fillStyle) {
-            case fixed:
-                inImage = Util.pad(greyImage,
-                                   maxEdge * Config.imhotep.getFractionWidth(),
-                                   maxEdge * Config.imhotep.getFractionHeight());
-                break;
-            case average:
-                inImage = Util.pad(greyImage,
-                                   maxEdge * Config.imhotep.getFractionWidth(),
-                                   maxEdge * Config.imhotep.getFractionHeight(),
-                                   averageGrey);
-                break;
-            default:
-                throw new UnsupportedOperationException("Don't know how to handle fill style " + fillStyle);
-        }
-
-        final PyramidGrey23 pyramid = Config.imhotep.createNew(uuid);
-        pyramid.setAverageGrey(averageGrey);
-        pyramid.setSourceSize(greyImage.getWidth(), greyImage.getHeight());
-        final int fw = pyramid.getFractionWidth();
-        final int fh = pyramid.getFractionHeight();
-        final int maxLevel = Config.imhotep.getMaxTileLevel();
-        final long baseSum[] = new long[fw*fh]; // We calculate the 2x3-level based on the full image
-
-        for (int level = maxLevel; level > 0 ; level--) {
-            int edge = Config.imhotep.getTileEdge(level);
-            BufferedImage scaled = Util.scale(inImage, edge * fw, edge * fh);
-//            System.out.println("level=" + level + ", avg=" + avg(scaled));
-            int[] sourcePixels = new int[edge*edge];
-            byte[] pData = new byte[edge*edge];
-            //show(scaled);
-
-            for (int fy = 0; fy < fh; fy++) {
-                for (int fx = 0; fx < fw; fx++) {
-                    if (level == 1) {
-                        // Level 1 is special as we use the average of the color from the upmost level
-                        // If we just scale down, the resulting pixels gets very light
-                        pData[0] = (byte) (baseSum[fy*fw+fx] /
-                                           Config.imhotep.getTileEdge(maxLevel) /
-                                           Config.imhotep.getTileEdge(maxLevel));
-                        pyramid.setData(pData, level, fx, fy);
-                        continue;
-                    }
-                    scaled.getRaster().getPixels(fx * edge, fy * edge, edge, edge, sourcePixels);
-                    if (level == maxLevel) {
-//                        System.out.println("getPixels(fx*edge=" + fx * edge + ", fy*edge=" + fy * edge + ", edge=" + edge);
-                        long sum = 0;
-                        for (int i = 0; i < sourcePixels.length; i++) {
-                            pData[i] = (byte) sourcePixels[i];
-                            sum += sourcePixels[i];
-                        }
-                        baseSum[fy*fw+fx] = sum;
-                    } else {
-                        for (int i = 0; i < sourcePixels.length; i++) {
-                            pData[i] = (byte) sourcePixels[i];
-                        }
-                    }
-//                    show(pData, edge);
-                    pyramid.setData(pData, level, fx, fy);
-                }
-            }
-        }
-        log.debug("Created #" + ++pyramidCount + ": " + pyramid);
-        return pyramid;
-    }
 }

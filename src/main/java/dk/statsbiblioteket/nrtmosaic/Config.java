@@ -22,6 +22,8 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
@@ -91,8 +93,7 @@ public class Config {
         conf.put("tile.edge", 256);
         conf.put("tile.cachesize", 100);*/
     }
-
-    public static final PyramidGrey23 imhotep = new PyramidGrey23(CorpusCreator.MAX_LEVEL);
+    public static final PyramidGrey23 imhotep = new PyramidGrey23(Config.getInt("pyramid.maxlevel"));
     public static Integer getInt(String key) {
         return Integer.parseInt(conf.getProperty(key));
     }
@@ -109,4 +110,7 @@ public class Config {
         return Double.parseDouble(conf.getProperty(key));
     }
 
+    public static Path getCacheRoot() {
+        return Paths.get(getString("pyramid.cache"), getString("tile.fill.style"));
+    }
 }

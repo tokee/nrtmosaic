@@ -57,7 +57,7 @@ public class CorpusCreatorTest {
     @Test
     public void testBreakdown() throws IOException {
         String EXPECTED_ID = "9c05d958-b616-47c1-9e4f-63ec2dd9429e".replace("-", "");
-        CorpusCreator cc = new CorpusCreator();
+        PyramidCreator cc = new PyramidCreator();
         PyramidGrey23 pyramid = cc.breakDownImage(Thread.currentThread().getContextClassLoader().getResource(SAMPLE));
         Assert.assertEquals("The pyramid should have the right ID", EXPECTED_ID, pyramid.getID().toHex());
     }
@@ -70,7 +70,7 @@ public class CorpusCreatorTest {
     // Simple crash/no-crash test
     @Test
     public void testBreakdowns() throws IOException {
-        CorpusCreator cc = new CorpusCreator();
+        PyramidCreator cc = new PyramidCreator();
         Path root = Files.createTempDirectory("pyramid_test");
         for (String sample : SAMPLES) {
             String expectedID = sample.replace("-", "").replace("sample_", "").replace(".jpg", "");
@@ -82,7 +82,7 @@ public class CorpusCreatorTest {
     }
 
     public static Path createPyramidSample() throws IOException {
-        CorpusCreator cc = new CorpusCreator();
+        PyramidCreator cc = new PyramidCreator();
         Path root = Files.createTempDirectory("pyramid_test");
         for (String sample : SAMPLES) {
             URL image = Thread.currentThread().getContextClassLoader().getResource(sample);
