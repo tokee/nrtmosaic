@@ -73,7 +73,7 @@ public class PyramidGrey23 {
     public static final int MEM_DATA_LEVEL = 2; // Memory cache up to and including tile level 2 (2x2 * 6 pixels)
     private final int memDataSize = tileOffsets[MEM_DATA_LEVEL+2];
     private final byte[] memData = new byte[memDataSize];
-
+    private static final int MAX_DYNAMIC_DISTANCE = Config.getInt("tile.fill.dynamic.maxdistance");
 
     public PyramidGrey23(int maxTileLevel) {
         this.maxTileLevel = maxTileLevel;
@@ -292,9 +292,11 @@ public class PyramidGrey23 {
             return new Range(0, 255);
         }
         // average = overallAverage*(1-getMissingPixelsFraction())+dynamic*getMissingPixelsFraction()
-        return new Range(Math.max(0, (int) (overallAverage * (1 - getMissingPixelsFraction()))),
-                         Math.min(255, (int) (overallAverage*(1-getMissingPixelsFraction()) +
-                                              255*getMissingPixelsFraction())));
+        return new Range(Math.max(overallAverage-MAX_DYNAMIC_DISTANCE,
+                                  (int) (overallAverage * (1 - getMissingPixelsFraction()))),
+                         Math.min(overallAverage+MAX_DYNAMIC_DISTANCE,
+                                  (int) (overallAverage*(1-getMissingPixelsFraction()) +
+                                         255*getMissingPixelsFraction())));
     }
     public int getDynamic(int wantedAverage) {
         int overallAverage = getMissingAwareAverage(getTilesOffset(1), getFractionWidth()*getFractionHeight());
@@ -304,7 +306,8 @@ public class PyramidGrey23 {
             return 255; // Actual value doesn't matter as it will not be used
         }
         double dynamicGrey = (wantedAverage-overallAverage*(1-mpf))/mpf;
-        return (int) Math.max(0, Math.min(255, dynamicGrey));
+        return (int) Math.max(0, Math.max(overallAverage-MAX_DYNAMIC_DISTANCE,
+                                          Math.min(255, Math.min(overallAverage+MAX_DYNAMIC_DISTANCE, dynamicGrey))));
     }
 
     public static final class Range {
@@ -312,8 +315,8 @@ public class PyramidGrey23 {
         public final int to;
 
         public Range(int from, int to) {
-            this.from = from;
-            this.to = to;
+            this.from = from < 0 ? 0 : from;
+            this.to = to > 255 ? 255 : to;
         }
     }
 
