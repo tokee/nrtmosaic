@@ -39,21 +39,18 @@ public class PyramidConcatenator {
 
     private void concatenateInternal() throws IOException {
         long startTime = System.nanoTime();
-        if (!Files.exists(cRoot)) {
-            Files.createDirectories(cRoot);
-        }
         if (Files.exists(cRoot.resolve("0.dat"))) {
             if (!Config.getBool("corpuscreator.overwrite")) {
                 log.info("Skipping pyramid concatenation as concats in " + cRoot + " exists and overwrite == false");
                 return;
             }
             log.info("Overwriting old pyramid concatenations from " + cRoot + " as overwrite == true");
-            int i = 0;
-            while (Files.exists(cRoot.resolve(i + ".dat"))) {
-                Files.deleteIfExists(cRoot.resolve(i + ".dat"));
-            }
+            Util.deleteFolder(cRoot);
             log.debug("Old pyramid concatenations removed successfully");
 
+        }
+        if (!Files.exists(cRoot)) {
+            Files.createDirectories(cRoot);
         }
         log.info("Creating concatenated pyramid data in " + cRoot);
 

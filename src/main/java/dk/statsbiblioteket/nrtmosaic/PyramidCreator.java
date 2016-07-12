@@ -96,37 +96,37 @@ public class PyramidCreator {
     public PyramidGrey23 breakDownImage(URL in) throws IOException {
         UUID uuid = new UUID(in.toString());
 
-        final BufferedImage greyImage = Util.toGrey(ImageIO.read(in));
+        final BufferedImage greyImage = Util.ensureNoMissingGrey(Util.toGrey(ImageIO.read(in)));
+        final int sWidth = greyImage.getWidth();
+        final int sHeight = greyImage.getHeight();
         final int averageGrey = Util.getAverageGrey(greyImage);
-        final int maxEdge = Config.imhotep.getTileEdge(Config.imhotep.getMaxTileLevel());
-        BufferedImage inImage;
-        switch (fillStyle) {
-            case fixed:
-                inImage = Util.pad(greyImage,
-                                   maxEdge * Config.imhotep.getFractionWidth(),
-                                   maxEdge * Config.imhotep.getFractionHeight());
-                break;
-            case average:
-                inImage = Util.pad(greyImage,
-                                   maxEdge * Config.imhotep.getFractionWidth(),
-                                   maxEdge * Config.imhotep.getFractionHeight(),
-                                   averageGrey);
-                break;
-            default:
-                throw new UnsupportedOperationException("Don't know how to handle fill style " + fillStyle);
+        final int maxLevel = Config.imhotep.getMaxTileLevel();
+        final int maxEdge = Config.imhotep.getTileEdge(maxLevel);
+        final int iWidth = maxEdge * Config.imhotep.getFractionWidth();
+        final int iHeight = maxEdge * Config.imhotep.getFractionHeight();
+        if (sWidth > iWidth || sHeight > iHeight) {
+            log.warn("The source " + in + " has size " + sWidth + "x" + sHeight +
+                     ", which exceeds the ideal size " + iWidth + "x" + iHeight);
         }
+        final double missingPixelsFraction = 1D*sWidth*sHeight/(iWidth*iHeight);
+        BufferedImage inImage = Util.pad(greyImage,
+                                         maxEdge * Config.imhotep.getFractionWidth(),
+                                         maxEdge * Config.imhotep.getFractionHeight(),
+                                         Util.MISSING_GREY);
 
         final PyramidGrey23 pyramid = Config.imhotep.createNew(uuid);
         pyramid.setAverageGrey(averageGrey);
-        pyramid.setSourceSize(greyImage.getWidth(), greyImage.getHeight());
+        pyramid.setMissingPixelsFraction(missingPixelsFraction);
+        pyramid.setSourceSize(sWidth, sHeight);
         final int fw = pyramid.getFractionWidth();
         final int fh = pyramid.getFractionHeight();
-        final int maxLevel = Config.imhotep.getMaxTileLevel();
         final long baseSum[] = new long[fw*fh]; // We calculate the 2x3-level based on the full image
 
         for (int level = maxLevel; level > 0 ; level--) {
             int edge = Config.imhotep.getTileEdge(level);
-            BufferedImage scaled = Util.scale(inImage, edge * fw, edge * fh);
+            // FIXME: When scaling, it is possible to arrive at MISSING_GREY: Scaling should be done without padding
+            BufferedImage scaled = Util.missingAwareScale(
+                    inImage, edge * fw, edge * fh, sWidth, sHeight, iWidth, iHeight);
 //            System.out.println("level=" + level + ", avg=" + avg(scaled));
             int[] sourcePixels = new int[edge*edge];
             byte[] pData = new byte[edge*edge];

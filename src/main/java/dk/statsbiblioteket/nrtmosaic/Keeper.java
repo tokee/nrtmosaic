@@ -71,7 +71,7 @@ public class Keeper {
         }
         int i = 0;
         while (Files.exists(concatRoot.resolve(i + ".dat"))) {
-            Path concatFile = concatRoot.resolve(i + ".dat");
+            Path concatFile = concatRoot.resolve(i++ + ".dat");
             if (!Files.exists(concatFile)) {
                 log.warn("Expected concatenation file at " + concatFile);
                 continue;

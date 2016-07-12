@@ -31,6 +31,8 @@ import java.nio.file.Path;
  * Representations of a greyscale image of aspect ratio 2:3 at different zoom levels.
  * </p><p>
  * The image consists of 6 tiles.
+ * </p><p>
+ * A pixel of grey 0 means that the pixel was not present in the original image.
  * </p>
  */
 public class PyramidGrey23 {
@@ -50,7 +52,8 @@ public class PyramidGrey23 {
     private static final int AVERAGE_GREY_INDEX = IDPART2_INDEX+8;
     private static final int WIDTH_INDEX =        AVERAGE_GREY_INDEX +1;
     private static final int HEIGHT_INDEX =       WIDTH_INDEX+2;
-    private static final int TILE_START_INDEX =   HEIGHT_INDEX+2;
+    private static final int MISSING_PIXELS_FRAC= HEIGHT_INDEX+2; // Fraction = missingPixels/(edge*edge)*256
+    private static final int TILE_START_INDEX =   MISSING_PIXELS_FRAC+1;
 
     static {
         tileOffsets = new int[18]; // Theoretically infinite, but we stop at 65K*65K pixel tiles
@@ -180,6 +183,13 @@ public class PyramidGrey23 {
         return getShort(HEIGHT_INDEX);
     }
 
+    public void setMissingPixelsFraction(double fraction) {
+        setByte(MISSING_PIXELS_FRAC, (int)(fraction*256));
+    }
+    public double getMissingPixelsFraction() {
+        return getByteAsInt(MISSING_PIXELS_FRAC)/256;
+    }
+
     private void setShort(int offset, long value) {
         for (int i = 0; i < 2; ++i) {
           setByte(offset+i, value >>> (2-i-1 << 3));
@@ -233,20 +243,20 @@ public class PyramidGrey23 {
     // 1: 1x1
     // 2: 2x2
     // 3: 4x4
-    public static int getTilesOffset(int level) {
+    public int getTilesOffset(int level) {
 //        if (level > maxTileLevel) {
 //            throw new IllegalArgumentException("Requested tileLevel=" + level + " with maxTileLevel=" + maxTileLevel);
 //        }
         return tileOffsets[level];
     }
 
-    public static int getTileOffset(int level, int fx, int fy) {
+    public int getTileOffset(int level, int fx, int fy) {
         final int edge = getTileEdge(level);
         final int blockSize = edge*edge;
         return getTilesOffset(level) + (fx * blockSize) + (fy * 2 * blockSize);
     }
 
-    public static int getTileEdge(int level) {
+    public int getTileEdge(int level) {
         return tileEdges[level];
     }
 
@@ -288,13 +298,14 @@ public class PyramidGrey23 {
                 log.info("Pyramid " + hex + " was already processed. Leaving untouched");
                 return false;
             }
-            log.info("Pyramid " + hex + " was already processed. Overwriting with new version");
+            log.info("Overwriting Pyramid " + hex + " with new version");
             Files.delete(full);
+        } else {
+            log.debug("Storing " + this + " as " + full);
         }
         if (!Files.exists(folder)) {
             Files.createDirectories(folder);
         }
-        log.debug("Storing " + this + " as " + full);
         try (FileOutputStream fos = new FileOutputStream(full.toFile())) {
             WritableByteChannel channel = Channels.newChannel(fos);
             backingData.position(origo);

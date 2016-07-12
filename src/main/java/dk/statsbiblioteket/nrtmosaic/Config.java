@@ -111,6 +111,6 @@ public class Config {
     }
 
     public static Path getCacheRoot() {
-        return Paths.get(getString("pyramid.cache"), getString("tile.fill.style"));
+        return Paths.get(getString("pyramid.cache"));
     }
 }

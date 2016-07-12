@@ -38,6 +38,8 @@ public class Util {
     public static final int FILL_COLOR_INT;
     public static final Color DARK_GREY;
     private static final BufferedImage DEFAULT_BLANK;
+    public static final int MISSING_GREY;
+    public static final int MISSING_REPLACEMENT;
 
     public static void deleteFolder(Path lastRoot) {
         try {
@@ -65,6 +67,27 @@ public class Util {
         } catch (IOException e) {
             throw new RuntimeException("IOException iterating sub-folders of " + folder, e);
         }
+    }
+
+    /**
+     * Any pixel with the value {@link #MISSING_GREY} will get the value {link #MISSING_REPLACEMENT}.
+     */
+    public static BufferedImage ensureNoMissingGrey(BufferedImage image) {
+        final int w = image.getWidth();
+        final int h = image.getHeight();
+        int[] pixels = new int[w*h];
+        image.getRaster().getPixels(0, 0, w, h, pixels);
+        boolean someMissing = false;
+        for (int i = 0 ; i < w*h ; i++) {
+            if (pixels[i] == MISSING_GREY) {
+                someMissing = true;
+                pixels[i] = MISSING_REPLACEMENT;
+            }
+        }
+        if (someMissing) {
+            image.getRaster().setPixels(0, 0, w, h, pixels);
+        }
+        return image;
     }
 
     public enum FILL_STYLE {
@@ -112,6 +135,8 @@ public class Util {
 
         EDGE = Config.getInt("tile.edge");
         DEFAULT_BLANK = createBlank(EDGE, EDGE, FILL_COLOR_INT);
+        MISSING_GREY = FILL_COLOR_INT;
+        MISSING_REPLACEMENT = MISSING_GREY == 255 ? 254 : MISSING_GREY+1;
     }
 
     private static BufferedImage createBlank(int width, int height, int fillGrey) {
@@ -199,8 +224,48 @@ public class Util {
         return full;
     }
 
+    /**
+     * Scales the image to the wanted width and height, ensuring that no pixels are {@link #MISSING_GREY} and that the
+     * missing pixels (those inside the scaled sourcewidth and sourceHeight) are all set to MISSING_GREY.
+     */
+    public static BufferedImage missingAwareScale(
+            BufferedImage inImage, int wantedWidth, int wantedHeight, int sourceWidth, int sourceHeight,
+            int idealWidth, int idealHeight) {
+        BufferedImage outImage = scale(inImage, wantedWidth, wantedHeight);
+        int missingLeft = (int) (1D*sourceWidth/idealWidth*wantedWidth);
+        if (missingLeft < 1) {
+            missingLeft = 1;
+        }
+        int missingTop = (int) (1D*sourceHeight/idealHeight*wantedHeight);
+        if (missingTop < 1) {
+            missingTop = 1;
+        }
+        int[] pixels = new int[wantedWidth*wantedHeight];
+        outImage.getRaster().getPixels(0, 0, wantedWidth, wantedHeight, pixels);
+
+        for (int y = 0 ; y < missingTop ; y++) {
+            for (int x = 0 ; x < missingLeft ; x++) {
+                if (pixels[y*wantedWidth+x] == MISSING_GREY) {
+                    pixels[y*wantedWidth+x] = MISSING_REPLACEMENT;
+                }
+            }
+            for (int x = missingLeft ; x < wantedWidth ; x++) {
+                pixels[y*wantedWidth+x] = MISSING_GREY;
+            }
+        }
+        for (int y = missingTop ; y < wantedHeight ; y++) {
+            for (int x = 0 ; x < wantedWidth ; x++) {
+                pixels[y*wantedWidth+x] = MISSING_GREY;
+            }
+        }
+
+        outImage.getRaster().setPixels(0, 0, wantedWidth, wantedHeight, pixels);
+        return outImage;
+    }
+
+
     // http://stackoverflow.com/questions/3967731/how-to-improve-the-performance-of-g-drawimage-method-for-resizing-images
-    public static BufferedImage scale(BufferedImage image, int width, int height) throws IOException {
+    public static BufferedImage scale(BufferedImage image, int width, int height) {
         int imageWidth  = image.getWidth();
         int imageHeight = image.getHeight();
         if (width == imageWidth && height == imageHeight) {
