@@ -187,7 +187,7 @@ public class PyramidGrey23 {
         setByte(MISSING_PIXELS_FRAC, (int)(fraction*256));
     }
     public double getMissingPixelsFraction() {
-        return getByteAsInt(MISSING_PIXELS_FRAC)/256;
+        return 1D*getByteAsInt(MISSING_PIXELS_FRAC)/256;
     }
 
     private void setShort(int offset, long value) {
@@ -299,7 +299,11 @@ public class PyramidGrey23 {
     public int getDynamic(int wantedAverage) {
         int overallAverage = getMissingAwareAverage(getTilesOffset(1), getFractionWidth()*getFractionHeight());
         // wantedAverage = overallAverage*(1-getMissingPixelsFraction())+dynamic*getMissingPixelsFraction()
-        double dynamicGrey = (wantedAverage-overallAverage*(1-getMissingPixelsFraction()))/getMissingPixelsFraction();
+        final double mpf = getMissingPixelsFraction();
+        if (mpf*mpf < 0.001) {
+            return 255; // Actual value doesn't matter as it will not be used
+        }
+        double dynamicGrey = (wantedAverage-overallAverage*(1-mpf))/mpf;
         return (int) Math.max(0, Math.min(255, dynamicGrey));
     }
 

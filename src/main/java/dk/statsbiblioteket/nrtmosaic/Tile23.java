@@ -35,6 +35,7 @@ public class Tile23 {
     public void setPyramid(int x, int y, PyramidGrey23 pyramid, int wantedAverage) {
         pyramids[y*edge+x] = pyramid;
         dynamicGreys[y*edge+x] = (byte) pyramid.getDynamic(wantedAverage);
+//        log.debug("Wanted=" + wantedAverage + ", average=" + pyramid.getAverageGrey() + ", dynamic=" + pyramid.getDynamic(wantedAverage));
     }
 
     public PyramidGrey23 getPyramid(int x, int y) {
