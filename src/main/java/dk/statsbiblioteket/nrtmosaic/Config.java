@@ -17,6 +17,7 @@ package dk.statsbiblioteket.nrtmosaic;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import javax.security.auth.login.Configuration;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -27,22 +28,55 @@ import java.util.Properties;
 
 public class Config {
     private static Log log = LogFactory.getLog(Config.class);
+    private static final String DEFAULT_PROPS = "nrtmosaic.default.properties";
     private static final String PROPS = "nrtmosaic.properties";
     private static final Properties conf;
 
     static { // Default values
-        URL url = Thread.currentThread().getContextClassLoader().getResource(PROPS);
-        try {
-            if (url == null) {
-                throw new RuntimeException("Unable to locate properties '" + PROPS + "'");
+        ClassLoader loader = Thread.currentThread().getContextClassLoader();
+        URL urlD = loader.getResource(DEFAULT_PROPS);
+        Properties confL = null;
+        if (urlD == null) {
+            log.info("No default properties " + DEFAULT_PROPS + " found. Attempting override properties");
+        } else {
+            try {
+                try (InputStream is = urlD.openStream()) {
+                    confL = new Properties();
+                    confL.load(is);
+                }
+                log.info("Loaded default properties from " + urlD);
+            } catch (Exception e) {
+                throw new RuntimeException("Unable to load default properties from '" + urlD + "'", e);
             }
-            try (InputStream is = url.openStream()) {
-                conf = new Properties();
-                conf.load(is);
-            }
-        } catch (Exception e) {
-            throw new RuntimeException("Unable to load properties from '" + url + "'", e);
         }
+
+
+        URL urlO = loader.getResource(PROPS);
+        if (urlO == null) {
+            if (confL == null) {
+                String message = "Neither " + DEFAULT_PROPS + " nor " + PROPS + " could be located";
+                log.fatal(message);
+                throw new IllegalStateException(message);
+            }
+            log.info("Only " + DEFAULT_PROPS + " available. No overrides loaded");
+        } else {
+            try {
+                try (InputStream is = urlO.openStream()) {
+                    if (confL == null) {
+                        confL = new Properties();
+                        confL.load(is);
+                        log.info("Loaded default override properties only from " + urlO);
+                    } else {
+                        confL = new Properties(confL);
+                        confL.load(is);
+                        log.info("Loaded and layered overrides from " + urlO);
+                    }
+                }
+            } catch (Exception e) {
+                throw new RuntimeException("Unable to load override properties from '" + urlO + "'", e);
+            }
+        }
+        conf = confL;
         /*
 //        conf.put("pyramid.source", "nrtmosaic/sources.dat"); // List of URLs to use as source
 //        conf.put("pyramid.cache", "nrtmosaic/cache");        // Where to store the cache

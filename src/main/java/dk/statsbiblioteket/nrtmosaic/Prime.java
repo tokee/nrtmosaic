@@ -309,7 +309,9 @@ public class Prime {
     }
 
     // https://openseadragon.github.io/examples/tilesource-dzi/
-    // /avis-show/symlinks/9/c/0/5/9c05d958-b616-47c1-9e4f-63ec2dd9429e.dzi
+
+    // The problem here is that the size interpolated from the Pyramid source widths are quite imprecise and leads
+    // to image artefacts.
     public String getDZI(String deepZoom) {
         PyramidGrey23 pyramid = keeper.getPyramid(deepZoom);
         if (pyramid == null) {
@@ -320,11 +322,21 @@ public class Prime {
         final long width = (long) (Math.pow(2, dziFactor) * pyramid.getSourceWidth() * dziFactor);
         final long height = (long) (Math.pow(2, dziFactor) * pyramid.getSourceHeight() * dziFactor);
         // TODO: Add check for overflow with JavaScript Double.MAX_INTEGER
+        return getDZIXML(width, height);
+    }
+
+    /**
+     * @param width  image original width.
+     * @param height image original height.
+     * @return DeepZoom DZI with sizes scaled by dziFactor.
+     */
+    private String getDZIXML(long width, long height) {
+        long dziFactor = Config.getLong("prime.dzifactor");
         return String.format("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
                              "<Image xmlns=\"http://schemas.microsoft.com/deepzoom/2008\"\n" +
                              "       Format=\"jpg\" Overlap=\"0\" TileSize=\"256\" >\n" +
                              "    <Size Width=\"%d\" Height=\"%d\"/>\n" +
-                             "</Image>", width, height);
+                             "</Image>", width*dziFactor, height*dziFactor);
     }
 
     public String getRandomImage() {

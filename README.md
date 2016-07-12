@@ -96,6 +96,8 @@ http://thetechnocratnotebook.blogspot.dk/2012/05/installing-tomcat-7-and-apache2
 
 mod_proxy_ajp seems simplest to use:
 http://httpd.apache.org/docs/2.2/mod/mod_proxy_ajp.html
+http://stackoverflow.com/questions/2001886/how-to-enable-mod-proxy-ajp-for-apache-2-2-14
+   sudo a2enmod proxy_ajp
 
 
 ### Pyramid TIFF
