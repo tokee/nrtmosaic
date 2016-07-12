@@ -40,7 +40,7 @@ public class Keeper {
 
 
     public Keeper() {
-        this(Paths.get(Config.getString("pyramid.cache"), Config.getString("tile.fill.style")));
+        this(Config.getCacheRoot());
     }
 
     // /tmp/pyramid_test1631652512768907712/ 02/ 82/ 02823b5f223a41249913985cb5ad815f.dat
@@ -69,7 +69,8 @@ public class Keeper {
         if (!Files.exists(concatRoot)) {
             throw new RuntimeException("The expected concatenation cache did not exist at " + concatRoot);
         }
-        for (int i = 0 ; i < 256 ; i++) {
+        int i = 0;
+        while (Files.exists(concatRoot.resolve(i + ".dat"))) {
             Path concatFile = concatRoot.resolve(i + ".dat");
             if (!Files.exists(concatFile)) {
                 log.warn("Expected concatenation file at " + concatFile);
@@ -228,7 +229,7 @@ public class Keeper {
     }
 
     private String listBuckets() {
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         int bucketStart = 0;
         for (int bucket = 0 ; bucket < bucketCount ; bucket++) {
             if (bucket != 0) {

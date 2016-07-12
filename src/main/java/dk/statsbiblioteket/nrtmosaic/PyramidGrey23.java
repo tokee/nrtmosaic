@@ -304,10 +304,15 @@ public class PyramidGrey23 {
         return true;
     }
 
-    public synchronized void store(FileOutputStream outputStream) throws IOException {
+    /**
+     * Write the data for the Pyramid to the given stream.
+     * @return the amount of bytes written.
+     */
+    public synchronized int store(FileOutputStream outputStream) throws IOException {
         WritableByteChannel channel = Channels.newChannel(outputStream);
         backingData.position(origo);
         channel.write(backingData); // TODO: Only write bytecount bytes
+        return byteCount;
     }
 
     public Path getFullPath(Path root, UUID id) {
