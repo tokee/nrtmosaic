@@ -90,12 +90,13 @@ public class Tile23 {
                 case 2:   // None (1, 4, 7, 10...)
                     continue;
                 case 0: { // Top-down (0, 3, 6, 9...)
-                    if (y+1>=edge) {
-                        continue; // TODO: Figure out how to handle top-bottom borders between tiles
-                    }
+//                    if (y+1>=edge) {
+//                        continue; // TODO: Figure out how to handle top-bottom borders between tiles
+//                    }
                     for (int x = 0 ; x < edge ; x++) {
                         int primary = pixels[y*edge + x];
-                        int secondary = pixels[(y+1)*edge + x];
+                        // Hack as 256%3 == 1. Maybe this could be handled by considering the y-position of the tile?
+                        int secondary = y+1>=edge ? Util.FILL_COLOR_INT : pixels[(y+1)*edge + x];
                         tile.setPyramid(x, y, keeper.getClosestTop(primary, secondary, random), primary);
                     }
                     break;
