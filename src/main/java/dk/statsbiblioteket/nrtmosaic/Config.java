@@ -88,7 +88,7 @@ public class Config {
         conf.put("prime.firstbasiclevel", 8);
         conf.put("prime.lastbasiclevel", 13);
         conf.put("pyramid.maxlevel", 8);
-        conf.put("tile.fillgrey", 0xEE);
+        conf.put("tile.fill.grey", 0xEE);
         conf.put("tile.debuggrey", 0x99);
         conf.put("tile.edge", 256);
         conf.put("tile.cachesize", 100);*/

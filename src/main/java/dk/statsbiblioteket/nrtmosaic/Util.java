@@ -129,7 +129,7 @@ public class Util {
 
     static {
         DEFAULT_FILL_STYLE = FILL_STYLE.valueOf(Config.getString("tile.fill.style"));
-        FILL_COLOR_INT = Config.getInt("tile.fillgrey");
+        FILL_COLOR_INT = Config.getInt("tile.fill.grey");
         FILL_COLOR = new Color(FILL_COLOR_INT, FILL_COLOR_INT, FILL_COLOR_INT);
         int dark_grey = Config.getInt("tile.debuggrey");
         DARK_GREY = new Color(dark_grey, dark_grey, dark_grey);
