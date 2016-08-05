@@ -72,16 +72,87 @@ For each image:
 first 4 hex-digit in the ID. `34fe/...`
  Content is `[IDn][witdh][height]6*[128x128]6*[64x64]...6*[1x1][average]`
 
-### Deploy
-Tip: NRT-Mosaic is hungry for file handles. 1024 open files (check with 'ulimit -n') is probably not enough
 
-curl "http://ftp.download-by.net/apache/tomcat/tomcat-8/v8.0.35/bin/apache-tomcat-8.0.35.tar.gz" > apache-tomcat-8.0.35.tar.gz
-tar xzovf apache-tomcat-8.0.35.tar.gz
-ln -s apache-tomcat-8.0.35 tomcat
-echo "export JAVA_OPTS=\"-Xmx1000m $JAVA_OPTS\"" > tomcat/bin/setenv.sh
+### Deploy under Linux (only tested under Ubuntu 14.04)
+
+#### Install apache + iipimage
+nrtmosaic requires an image server (and some images), which runs under apache https or similar, using fastcgi.
+
+Under Ubuntu 16.04, this should be possible by calling `sudo apt-get install iipsrv`.
+Under 14.04 it is:
+
+```bash
+apt-get install iipimage-server
+sudo service apache2 restart
+```
+
+There seems to be a problem: http://iipimage.sourceforge.net/2012/05/new-debian-and-ubuntu-packages-released/
+That can be solved by
+```bash
+sudo cp -r /usr/lib/iipimage-server /usr/share/iipimage-server
+```
+and adjusting of the path in `/etc/apache2/mods-available/iipsrv.conf` accordingly.
+
+To verify installation, visit http://localhost/iipsrv/iipsrv.fcgi which should show a status page for IIPImage.
+
+
+If that does not work, more steps are needed: 
+```bash
+sudo apt-get install apache2
+sudo apt-get install libapache2-mod-fastcgi
+sudo a2enmod fastcgi
+sudo apache2ctl graceful
+...More to follow
+```
+
+### Generate some pyramid TIFFs
+http://iipimage.sourceforge.net/documentation/images/
+
+Single image:
+```bash
+convert <source> -define tiff:tile-geometry=256x256 -compress jpeg 'ptif:<destination>.tif'
+```
+
+Multiple images:
+```bash
+for I in *.jp2; do convert $I -define tiff:tile-geometry=256x256 -quality 80 -compress jpeg "ptif:${I%.*}.tif" ; done
+```
+or
+```bash
+ls *.jp2 | parallel -j 4 'I={} ; convert $I -define tiff:tile-geometry=256x256 -quality 80 -compress jpeg "ptif:${I%.*}.tif"'
+```
+
+Verify DeepZoom image server + pyramid TIFF with something like
+http://localhost/iipsrv/iipsrv.fcgi?DeepZoom=/tmp/0010a611-4af0-405c-a60d-977314627740.tif_files/8/0_1.jpg
+
+### Setup a local sample
+In the project folder, create a sub-folder `nrtmosaic` and add a file `sources.dat`.
+The sources.dat should contain a list of the available Pyramid TIFFs i size <= 256x384, such as
+```
+http://localhost/iipsrv/iipsrv.fcgi?DeepZoom=/home/te/projects/nrtmosaic/sample/0010a611-4af0-405c-a60d-977314627740.tif_files/8/0_0.jpg
+http://localhost/iipsrv/iipsrv.fcgi?DeepZoom=/home/te/projects/nrtmosaic/sample/0013ca9d-26ae-49c4-95d4-6ba0fa4ef407.tif_files/8/0_0.jpg
+http://localhost/iipsrv/iipsrv.fcgi?DeepZoom=/home/te/projects/nrtmosaic/sample/0019f8ff-fd0f-42d8-a449-6444c5b40777.tif_files/8/0_0.jpg
+http://localhost/iipsrv/iipsrv.fcgi?DeepZoom=/home/te/projects/nrtmosaic/sample/0020b25c-ea64-4e31-83cb-4c5031b3bd79.tif_files/8/0_0.jpg
+...
+```
+
+
+#### Download and install tomcat
+```bash
+./setupTomcat.sh
+```
+
+#### Start tomcat and deploy nrtmosaic
+Really ugly hack here, with the link to the configuration.
+```bash
 tomcat/bin/startup.sh
 ./deployLocalTomcat.sh
-cp -r gui/ tomcat/webapps/
+sleep 5
+pushd tomcat/webapps/nrtmosaic/WEB-INF/
+ln -s ../../../../nrtmosaic .
+popd
+tomcat/bin/shutdown.sh ; tomcat/bin/startup.sh
+```
 
 Test image:
 http://localhost:8080/nrtmosaic/services/image?source=foo&x=1&y=1&z=1
@@ -99,11 +170,3 @@ http://httpd.apache.org/docs/2.2/mod/mod_proxy_ajp.html
 http://stackoverflow.com/questions/2001886/how-to-enable-mod-proxy-ajp-for-apache-2-2-14
    sudo a2enmod proxy_ajp
 
-
-### Pyramid TIFF
-http://iipimage.sourceforge.net/documentation/images/
-convert <source> -define tiff:tile-geometry=256x256 -compress jpeg 'ptif:<destination>.tif'
-
-for I in *.jp2; do convert $I -define tiff:tile-geometry=256x256 -quality 80 -compress jpeg "ptif:${I%.*}.tif" ; done
-or
-ls *.jp2 | parallel -j 4 'I={} ; convert $I -define tiff:tile-geometry=256x256 -quality 80 -compress jpeg "ptif:${I%.*}.tif"'
