@@ -21,6 +21,7 @@ import javax.imageio.IIOException;
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -322,11 +323,21 @@ public class Prime {
 //            throw new IllegalArgumentException("Requested DZI for unknown pyramid with query " + deepZoom);
 //        }
 
-        String externalDZI = null;
+        String externalDZI;
+        URL externalURL;
         try {
-            externalDZI = Util.fetchString(new URL(toExternalURL("2.0", "1.1", deepZoom)));
+            externalURL = new URL(toExternalURL("2.0", "1.1", deepZoom));
+        } catch (MalformedURLException e) {
+            String message = "Unable to derive external URL for '" + deepZoom + "'";
+            log.warn(message, e);
+            throw new IllegalArgumentException(message, e);
+        }
+        try {
+            externalDZI = Util.fetchString(externalURL);
         } catch (IOException e) {
-            throw new RuntimeException("Unable to resolve DZI from image server for request " + deepZoom, e);
+            String message = "Unable to resolve DZI from image server for request " + deepZoom;
+            log.warn(message + " with derived external URL " + externalURL, e);
+            throw new RuntimeException(message, e);
         }
         return scaledDZI(deepZoom, externalDZI);
 
