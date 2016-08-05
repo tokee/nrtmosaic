@@ -32,14 +32,15 @@ public class PrimeTest {
     private static Log log = LogFactory.getLog(PrimeTest.class);
 
     final String BASE = "/avis-show/symlinks/9/c/0/5/9c05d958-b616-47c1-9e4f-63ec2dd9429e.jp2_files/";
-    final String BASE2 = "/home/te/projects/nrtmosaic/sample/0010a611-4af0-405c-a60d-977314627740.tif_files";
+    final String BASE3 = "/home/te/projects/nrtmosaic/sample/0010a611-4af0-405c-a60d-977314627740.tif_files";
+    final String BASE2 = "/avis-show/symlinks/0/2/0/5/020511f6-9892-45ce-9ac6-357b11b2378e.jp2_files/"; // deneb
 
     @Test
     public void testDZI() {
-        final String DZI = "/avis-show/symlinks/9/c/0/5/9c05d958-b616-47c19e4f-63ec2dd9429e.jp2.dzi";
+        final String DZI = BASE2.replace("_files/", ".dzi");
         String actual = Prime.instance().getDZI(DZI);
         log.debug("Got DZI response\n" + actual);
-        assertTrue("A DZI structure should be returned", actual.contains("Width"));
+        assertTrue("A DZI structure should be returned but got\n" + actual, actual.contains("Width"));
     }
 
     @Test
