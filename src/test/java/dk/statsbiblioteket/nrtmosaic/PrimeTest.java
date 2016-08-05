@@ -32,6 +32,7 @@ public class PrimeTest {
     private static Log log = LogFactory.getLog(PrimeTest.class);
 
     final String BASE = "/avis-show/symlinks/9/c/0/5/9c05d958-b616-47c1-9e4f-63ec2dd9429e.jp2_files/";
+    final String BASE2 = "/home/te/projects/nrtmosaic/sample/0010a611-4af0-405c-a60d-977314627740.tif_files";
 
     @Test
     public void testDZI() {
@@ -74,7 +75,7 @@ public class PrimeTest {
         int c = 6;
         for (int zoom = START ; zoom <= END ; zoom++) {
             tiles[zoom-START] = Prime.instance().deepzoom(String.format(
-                    "%s/%d/%d_%d", BASE, zoom, c, c), "2.0", "1.2");
+                    "%s/%d/%d_%d", BASE2, zoom, c, c), "2.0", "1.2");
             c *= 2;
         }
         Util.show(tiles);
