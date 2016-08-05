@@ -312,10 +312,25 @@ public class Prime {
 
     // The problem here is that the size interpolated from the Pyramid source widths are quite imprecise and leads
     // to image artefacts.
-    public String getDZI(String deepZoom) {
-        String external = toExternalURL("2.0", "1.1", deepZoom);
 
+    // Simple redirect to the external image server, with the slight twist that the size is inflated to trick
+    // OpenSeadragon to accept deeper zoom
+    public String getDZI(String deepZoom) {
         PyramidGrey23 pyramid = keeper.getPyramid(deepZoom);
+        // Enable the check below when the code has been tested
+//        if (pyramid == null) {
+//            throw new IllegalArgumentException("Requested DZI for unknown pyramid with query " + deepZoom);
+//        }
+
+        String externalDZI = null;
+        try {
+            externalDZI = Util.fetchString(new URL(toExternalURL("2.0", "1.1", deepZoom)));
+        } catch (IOException e) {
+            throw new RuntimeException("Unable to resolve DZI from image server for request " + deepZoom, e);
+        }
+        return scaledDZI(deepZoom, externalDZI);
+
+/*
         if (pyramid == null) {
             throw new NullPointerException("Unable to locate a pyramid for input '" + deepZoom + "'");
         }
@@ -324,15 +339,35 @@ public class Prime {
         final long width = (long) (Math.pow(2, dziFactor) * pyramid.getSourceWidth() * dziFactor);
         final long height = (long) (Math.pow(2, dziFactor) * pyramid.getSourceHeight() * dziFactor);
         // TODO: Add check for overflow with JavaScript Double.MAX_INTEGER
-        return getDZIXML(width, height);
+        return getDZIXML(width, height);*/
     }
 
-    /**
-     * @param width  image original width.
-     * @param height image original height.
-     * @return DeepZoom DZI with sizes scaled by dziFactor.
-     */
-    private String getDZIXML(long width, long height) {
+    // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number/MAX_SAFE_INTEGER
+    private long JAVASCRIPT_MAX = 9007199254740991L;
+    private String scaledDZI(String deepZoom, String DZI) {
+        long dziFactor = (long) Math.pow(2, Config.getLong("prime.dzifactor"));
+        long width = Long.parseLong(DZI.replaceFirst("(?s).*Width=\"([0-9]+)\".*", "$1"));
+        long height = Long.parseLong(DZI.replaceFirst("(?s).*Height=\"([0-9]+)\".*", "$1"));
+        if (width*dziFactor > JAVASCRIPT_MAX) {
+            log.error(
+                    "Problem scaling DZI for " + deepZoom + " as width " + width + " * dziFactor " + dziFactor + " is "
+                    + width*dziFactor + ", which is larger than the JavaScript integer max of " + JAVASCRIPT_MAX +
+                    ". The value will be rounded down to JavaScript max integer");
+        }
+        if (height*dziFactor > JAVASCRIPT_MAX) {
+            log.error(
+                    "Problem scaling DZI for " + deepZoom + " as width " + width + " * dziFactor " + dziFactor + " is "
+                    + width*dziFactor + ", which is larger than the JavaScript integer max of " + JAVASCRIPT_MAX +
+                    ". The value will be rounded down to JavaScript max integer");
+        }
+        return DZI.
+                replaceFirst("(?s)(.*Width=\")([0-9]+)(\".*)",
+                             "$1" + Long.toString(Math.min(width*dziFactor, JAVASCRIPT_MAX)) + "$3").
+                replaceFirst("(?s)(.*Height=\")([0-9]+)(\".*)",
+                             "$1" + Long.toString(Math.min(height*dziFactor, JAVASCRIPT_MAX)) + "$3");
+    }
+
+/*    private String getDZIXML(long width, long height) {
         long dziFactor = Config.getLong("prime.dzifactor");
         return String.format("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
                              "<Image xmlns=\"http://schemas.microsoft.com/deepzoom/2008\"\n" +
@@ -340,7 +375,7 @@ public class Prime {
                              "    <Size Width=\"%d\" Height=\"%d\"/>\n" +
                              "</Image>", width, height);
     }
-
+  */
     public String getRandomImage() {
         return idToPath(keeper.getRandom().getID());
     }

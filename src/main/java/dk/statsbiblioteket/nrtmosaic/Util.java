@@ -23,11 +23,14 @@ import java.awt.color.ColorSpace;
 import java.awt.geom.AffineTransform;
 import java.awt.image.AffineTransformOp;
 import java.awt.image.BufferedImage;
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.util.ArrayList;
 import java.util.stream.Stream;
 
 public class Util {
@@ -63,10 +66,18 @@ public class Util {
 
     public static Stream<Path> wrappedList(Path folder) {
         try {
-            return Files.list(folder);
+            // Recursive traversal with open streams racks up the open file handle count, so we need to close ASAP
+            return avoidLaziness(Files.list(folder));
         } catch (IOException e) {
             throw new RuntimeException("IOException iterating sub-folders of " + folder, e);
         }
+    }
+
+    private static Stream<Path> avoidLaziness(Stream<Path> lazy) {
+        java.util.List<Path> resolved = new ArrayList<>();
+        lazy.forEach(resolved::add);
+        lazy.close(); // Why do we need this? Shouldn't the Stream auto-close upon completion?
+        return resolved.stream();
     }
 
     /**
@@ -294,5 +305,23 @@ public class Util {
     }
     public static BufferedImage getBlankTile(int fillGrey) {
         return FILL_COLOR_INT == fillGrey ? DEFAULT_BLANK : createBlank(EDGE, EDGE, fillGrey);
+    }
+
+    public static String fetchString(URL url) throws IOException {
+        StringBuilder sb = new StringBuilder();
+        BufferedReader in = new BufferedReader(new InputStreamReader(url.openStream()));
+        try {
+            String inputLine;
+
+            while ((inputLine = in.readLine()) != null) {
+                if (sb.length() > 0) {
+                    sb.append("\n");
+                }
+                sb.append(inputLine);
+            }
+        } finally {
+            in.close();
+        }
+        return sb.toString();
     }
 }
