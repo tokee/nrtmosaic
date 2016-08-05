@@ -313,6 +313,8 @@ public class Prime {
     // The problem here is that the size interpolated from the Pyramid source widths are quite imprecise and leads
     // to image artefacts.
     public String getDZI(String deepZoom) {
+        String external = toExternalURL("2.0", "1.1", deepZoom);
+
         PyramidGrey23 pyramid = keeper.getPyramid(deepZoom);
         if (pyramid == null) {
             throw new NullPointerException("Unable to locate a pyramid for input '" + deepZoom + "'");
@@ -336,7 +338,7 @@ public class Prime {
                              "<Image xmlns=\"http://schemas.microsoft.com/deepzoom/2008\"\n" +
                              "       Format=\"jpg\" Overlap=\"0\" TileSize=\"256\" >\n" +
                              "    <Size Width=\"%d\" Height=\"%d\"/>\n" +
-                             "</Image>", width*dziFactor, height*dziFactor);
+                             "</Image>", width, height);
     }
 
     public String getRandomImage() {
