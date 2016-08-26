@@ -1,0 +1,48 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>NRT-Mosaic demo</title>
+    <link rel="stylesheet" type="text/css" href="nrtmosaic.css" />
+    <script src="openseadragon.min.js"></script>
+</head>
+
+<body class="previewpage">
+
+<div id="zoom-display" class="openseadragon">
+</div>
+
+<script type="text/javascript">
+    myDragon = OpenSeadragon({
+    id: "zoom-display",
+//    maxZoomLevel: 16384,
+    zoomPerScroll: 2.0,
+    debugMode: false,
+
+    prefixUrl:     "images/",
+    showNavigator:  false,
+    wrapHorizontal: false,
+    
+    tileSources: {
+    Image: {
+        xmlns:    "http://schemas.microsoft.com/deepzoom/2008",
+        Url:      "http://localhost:8080/nrtmosaic/services/image/deepzoom/?GAM=2.0&CNT=1.1&DeepZoom=/home/te/projects/nrtmosaic/sample/0010a611-4af0-405c-a60d-977314627740.tif_files/",
+//        Url:      "http://ekot.dk/nrt/deepzoom/?GAM=2.0&CNT=1.1&DeepZoom=/mnt/active/www/nrtmosaic/tiff/2f5a3fa8-89f7-4e4e-abbc-085eb8dab2db.tif_files/",
+        Format:   "jpg",
+        Overlap:  "0",
+        TileSize: "256",
+        Size: {
+//            Width:  5683*Math.pow(2, 27), // 13 = no recursion, 26 = 2 levels, 28+ crashes
+//            Height: 7101*Math.pow(2, 27),
+            Width:  6125*Math.pow(2, 27), // 13 = no recursion, 26 = 2 levels, 28+ crashes
+            Height: 9275*Math.pow(2, 27),
+        }
+    }
+    }
+    }
+);
+</script>
+
+</body>
+</html>
