@@ -123,7 +123,10 @@ ls *.jp2 | parallel -j 4 'I={} ; convert $I -define tiff:tile-geometry=256x256 -
 ```
 
 Verify DeepZoom image server + pyramid TIFF with something like
-http://localhost/iipsrv/iipsrv.fcgi?DeepZoom=/tmp/0010a611-4af0-405c-a60d-977314627740.tif_files/8/0_1.jpg
+http://localhost/iipsrv/iipsrv.fcgi?DeepZoom=/tmp/0010a611-4af0-405c-a60d-977314627740.tif_files/8/0_0.jpg
+
+Common problems: File permissions, too small image (try /9/0_0.jpg instead of /8/0_0.jpg).
+
 
 ### Setup a local sample
 In the project folder, create a sub-folder `nrtmosaic` and add a file `sources.dat`.
