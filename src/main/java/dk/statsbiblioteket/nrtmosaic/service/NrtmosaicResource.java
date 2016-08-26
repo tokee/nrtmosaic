@@ -58,7 +58,8 @@ public class NrtmosaicResource implements ServletContextListener {
 
     @GET
     @Path("/image/deepzoom/")
-    @Produces({"image/jpeg", "application/xml"})
+    @Produces({"image/jpeg", "text/plain"})
+    //@Produces({"image/jpeg", "application/xml"})
     public Response getImageDeepzoom(@QueryParam("GAM") String gam, @QueryParam("CNT") String cnt,
                                      @QueryParam("DeepZoom") String deepZoom) throws ServiceException {
         try {
