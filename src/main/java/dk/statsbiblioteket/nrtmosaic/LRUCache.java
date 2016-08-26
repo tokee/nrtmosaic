@@ -29,6 +29,7 @@ public class LRUCache<K, V> extends LinkedHashMap<K, V> {
         return size() > maxSize;
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public V get(Object key) {
         V value = super.get(key);
