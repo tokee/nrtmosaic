@@ -5,13 +5,25 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     <title>NRT-Mosaic demo</title>
     <link rel="stylesheet" type="text/css" href="nrtmosaic.css" />
-    <script src="openseadragon.min.js"></script>
+    <script src="openseadragon.js"></script>
+    <script src="nrtmosaic.js"></script>
 </head>
 
 <body class="previewpage">
 
 <div id="zoom-display" class="openseadragon">
 </div>
+
+<script type="text/javascript">
+    getJSON("/nrtmosaic/services/image/random",
+function(err, data) {
+  if (err != null) {
+    alert("Something went wrong: " + err);
+  } else {
+    alert("Random ID: " + data.random);
+  }
+});
+</script>
 
 <script type="text/javascript">
     myDragon = OpenSeadragon({
@@ -43,6 +55,5 @@
     }
 );
 </script>
-
 </body>
 </html>
