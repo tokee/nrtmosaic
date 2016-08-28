@@ -84,7 +84,7 @@ public class NrtmosaicResource implements ServletContextListener {
     @Produces("application/json")
     public Response getRandomImage() throws ServiceException {
         try {
-            String json = "{ \"random\": \"" + Prime.instance().getRandomImage() + "\"}";
+            String json = Prime.instance().getRandomImageJSON();
             log.debug("getRandomImage will return " + json);
             return Response.ok(json).build();
         } catch (Exception e) {

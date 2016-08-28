@@ -305,6 +305,10 @@ public class Prime {
         return url;
     }
 
+    private String toExternalDZIURL(String deepZoom) {
+        return IMAGE_SERVER + "?DeepZoom=" + deepZoom + ".dzi";
+    }
+
     public TileProvider getTileProvider() {
         return tileProvider;
     }
@@ -317,16 +321,31 @@ public class Prime {
     // Simple redirect to the external image server, with the slight twist that the size is inflated to trick
     // OpenSeadragon to accept deeper zoom
     public String getDZI(String deepZoom) {
+        return scaledDZI(deepZoom, getRawDZI(deepZoom));
+
+/*
+        if (pyramid == null) {
+            throw new NullPointerException("Unable to locate a pyramid for input '" + deepZoom + "'");
+        }
+        long dziFactor = Config.getLong("prime.dzifactor");
+        log.info("Calc: " + pyramid.getSourceWidth() * dziFactor + "x" + pyramid.getSourceHeight() * dziFactor);
+        final long width = (long) (Math.pow(2, dziFactor) * pyramid.getSourceWidth() * dziFactor);
+        final long height = (long) (Math.pow(2, dziFactor) * pyramid.getSourceHeight() * dziFactor);
+        // TODO: Add check for overflow with JavaScript Double.MAX_INTEGER
+        return getDZIXML(width, height);*/
+    }
+
+    private String getRawDZI(String deepZoom) {
         PyramidGrey23 pyramid = keeper.getPyramid(deepZoom);
-        // Enable the check below when the code has been tested
-//        if (pyramid == null) {
-//            throw new IllegalArgumentException("Requested DZI for unknown pyramid with query " + deepZoom);
-//        }
+        // TODO: Enable the check below when the code has been tested
+        if (pyramid == null && Config.getBool("prime.onlyallowknown")) {
+            throw new IllegalArgumentException("Requested DZI for unknown pyramid with query " + deepZoom);
+        }
 
         String externalDZI;
         URL externalURL;
         try {
-            externalURL = new URL(toExternalURL("2.0", "1.1", deepZoom));
+            externalURL = new URL(toExternalDZIURL(deepZoom));
         } catch (MalformedURLException e) {
             String message = "Unable to derive external URL for '" + deepZoom + "'";
             log.warn(message, e);
@@ -339,18 +358,7 @@ public class Prime {
             log.warn(message + " with derived external URL " + externalURL, e);
             throw new RuntimeException(message, e);
         }
-        return scaledDZI(deepZoom, externalDZI);
-
-/*
-        if (pyramid == null) {
-            throw new NullPointerException("Unable to locate a pyramid for input '" + deepZoom + "'");
-        }
-        long dziFactor = Config.getLong("prime.dzifactor");
-        log.info("Calc: " + pyramid.getSourceWidth() * dziFactor + "x" + pyramid.getSourceHeight() * dziFactor);
-        final long width = (long) (Math.pow(2, dziFactor) * pyramid.getSourceWidth() * dziFactor);
-        final long height = (long) (Math.pow(2, dziFactor) * pyramid.getSourceHeight() * dziFactor);
-        // TODO: Add check for overflow with JavaScript Double.MAX_INTEGER
-        return getDZIXML(width, height);*/
+        return externalDZI;
     }
 
     // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number/MAX_SAFE_INTEGER
@@ -374,8 +382,8 @@ public class Prime {
         return DZI.
                 replaceFirst("(?s)(.*Width=\")([0-9]+)(\".*)",
                              "$1" + Long.toString(Math.min(width*dziFactor, JAVASCRIPT_MAX)) + "$3").
-                replaceFirst("(?s)(.*Height=\")([0-9]+)(\".*)",
-                             "$1" + Long.toString(Math.min(height*dziFactor, JAVASCRIPT_MAX)) + "$3");
+                          replaceFirst("(?s)(.*Height=\")([0-9]+)(\".*)",
+                                       "$1" + Long.toString(Math.min(height*dziFactor, JAVASCRIPT_MAX)) + "$3");
     }
 
 /*    private String getDZIXML(long width, long height) {
@@ -387,7 +395,24 @@ public class Prime {
                              "</Image>", width, height);
     }
   */
+
     public String getRandomImage() {
         return idToPath(keeper.getRandom().getID());
+    }
+
+    // http://localhost/iipsrv/iipsrv.fcgi?DeepZoom=/home/te/projects/nrtmosaic/sample/0024b52b-f96a-4d70-b0fa-cec3f1bb1c83.tif.dzi
+    public String getRandomImageJSON() {
+        String image = getRandomImage();
+        String dzi = getRawDZI(image);
+        log.debug("Got raw DZI '" + dzi + "'");
+        try {
+            long width = Long.parseLong(dzi.replaceFirst("(?s).*Width=\"([0-9]+)\".*", "$1"));
+            long height = Long.parseLong(dzi.replaceFirst("(?s).*Height=\"([0-9]+)\".*", "$1"));
+
+            return String.format("{ \"image\":\"%s\", \"width\":\"%d\", \"height\":\"%d\" }",
+                                 image, width, height);
+        } catch (NumberFormatException e) {
+            throw new RuntimeException("NumberformatException extracting width and height from " + dzi, e);
+        }
     }
 }

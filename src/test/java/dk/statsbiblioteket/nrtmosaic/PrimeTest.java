@@ -136,4 +136,10 @@ public class PrimeTest {
         int c = 5120;
         Prime.instance().deepzoom(String.format("%s/%d/%d_%d", BASE, 22, c, c), "2.0", "1.2");
     }
+
+    // TODO: Figure out how to make these unit test independent of a running image server
+    public void testGetRandomImage() {
+        String random = Prime.instance().getRandomImageJSON();
+        assertTrue("The response should contain 'width'\n" + random, random.contains("width"));
+    }
 }
