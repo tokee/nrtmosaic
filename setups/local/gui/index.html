@@ -5,8 +5,8 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     <title>NRT-Mosaic demo</title>
     <link rel="stylesheet" type="text/css" href="nrtmosaic.css" />
-    <script src="openseadragon.js"></script>
-    <script src="nrtmosaic.js"></script>
+    <script type="application/javascript" src="openseadragon.js"></script>
+    <script type="application/javascript" src="nrtmosaic.js"></script>
 </head>
 
 <body class="previewpage">
@@ -15,51 +15,35 @@
 </div>
 
 <script type="text/javascript">
-    rando = "N/A";
-    getJSON("/nrtmosaic/services/image/random",
+    getJSON("/nrtmosaic/services/image/random", function(err, rando) {
 
-            function(err, data) {
-//        if (err != null) {
-//            alert("Something went wrong: " + err);
-//        } else {
-//            alert("Random ID: " + data.image);
-//        }
-                rando = data;
+        myDragon = OpenSeadragon({
+            id: "zoom-display",
+            zoomPerScroll: 2.0,
+            debugMode: false,
+
+            prefixUrl:     "images/",
+            showNavigator:  false,
+            wrapHorizontal: false,
+
+            tileSources: {
+                Image: {
+                    xmlns:    "http://schemas.microsoft.com/deepzoom/2008",
+                    Url:      "/nrtmosaic/services/image/deepzoom/?GAM=2.0&CNT=1.1&DeepZoom=" + rando.image + "_files/",
+                    Format:   "jpg",
+                    Overlap:  "0",
+                    TileSize: "256",
+                    Size: {
+                        // TODO: Bit dangerous here as we need to stay below MAX_INTEGER_VALUE for JavaScript
+                        Width:  rando.width*Math.pow(2, 27), // 13 = no recursion, 26 = 2 levels, 28+ crashes
+                        Height: rando.height*Math.pow(2, 27)
+                    }
+                }
             }
-    );
-    // How can rando be undefined here but fine at 'rando = dat', not to mention the default 'N/A'?
-
-    myDragon = OpenSeadragon({
-    id: "zoom-display",
-//    maxZoomLevel: 16384,
-    zoomPerScroll: 2.0,
-    debugMode: false,
-
-    prefixUrl:     "images/",
-    showNavigator:  false,
-    wrapHorizontal: false,
-    
-    tileSources: {
-    Image: {
-        xmlns:    "http://schemas.microsoft.com/deepzoom/2008",
-        //1Url:      "http://localhost:8080/nrtmosaic/services/image/deepzoom/?GAM=2.0&CNT=1.1&DeepZoom=/home/te/projects/nrtmosaic/sample/0010a611-4af0-405c-a60d-977314627740.tif_files/",
-        Url:      "http://localhost:8080/nrtmosaic/services/image/deepzoom/?GAM=2.0&CNT=1.1&DeepZoom=" + rando.image + "_files/",
-//        Url:      "http://ekot.dk/nrt/deepzoom/?GAM=2.0&CNT=1.1&DeepZoom=/mnt/active/www/nrtmosaic/tiff/2f5a3fa8-89f7-4e4e-abbc-085eb8dab2db.tif_files/",
-        Format:   "jpg",
-        Overlap:  "0",
-        TileSize: "256",
-        Size: {
-//            Width:  5683*Math.pow(2, 27), // 13 = no recursion, 26 = 2 levels, 28+ crashes
-//            Height: 7101*Math.pow(2, 27),
-            Width:  rando.width*Math.pow(2, 27), // 13 = no recursion, 26 = 2 levels, 28+ crashes
-            Height: rando.height*Math.pow(2, 27),
-//1            Width:  6125*Math.pow(2, 27), // 13 = no recursion, 26 = 2 levels, 28+ crashes
-//            Height: 9275*Math.pow(2, 27),
         }
+        );
     }
-    }
-    }
-);
+    );
 </script>
 </body>
 </html>

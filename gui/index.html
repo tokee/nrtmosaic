@@ -5,7 +5,8 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     <title>NRT-Mosaic demo</title>
     <link rel="stylesheet" type="text/css" href="nrtmosaic.css" />
-    <script src="openseadragon.js"></script>
+    <script type="application/javascript" src="openseadragon.js"></script>
+    <script type="application/javascript" src="nrtmosaic.js"></script>
 </head>
 
 <body class="previewpage">
@@ -14,34 +15,35 @@
 </div>
 
 <script type="text/javascript">
-    myDragon = OpenSeadragon({
-    id: "zoom-display",
-//    maxZoomLevel: 16384,
-    zoomPerScroll: 2.0,
-    debugMode: false,
+    getJSON("/nrtmosaic/services/image/random", function(err, rando) {
 
-    prefixUrl:     "images/",
-    showNavigator:  false,
-    wrapHorizontal: false,
+        myDragon = OpenSeadragon({
+            id: "zoom-display",
+            zoomPerScroll: 2.0,
+            debugMode: false,
 
-    test_tileSources: "http://tokemon.sb.statsbiblioteket.dk:8080/nrtmosaic/services/image/deepzoom/?GAM=2.0&CNT=1.1&DeepZoom=/avis-show/symlinks/f/f/7/f/ff7fdc6f-df8f-4b7d-a835-cd2b37e4d651.jp2.dzi",
+            prefixUrl:     "images/",
+            showNavigator:  false,
+            wrapHorizontal: false,
 
-    tileSources: {
-    Image: {
-        xmlns:    "http://schemas.microsoft.com/deepzoom/2008",
-        Url:      "http://tokemon.sb.statsbiblioteket.dk:8080/nrtmosaic/services/image/deepzoom/?GAM=2.0&CNT=1.1&DeepZoom=/avis-show/symlinks/f/f/7/f/ff7fdc6f-df8f-4b7d-a835-cd2b37e4d651.jp2_files/",
-        Format:   "jpg",
-        Overlap:  "0",
-        TileSize: "256",
-        Size: {           // 4147x5974
-            // Could this just be MAX_INTEGER?
-            Width:  4588*Math.pow(2, 29),
-            Height: 6623*Math.pow(2, 29),
+            tileSources: {
+                Image: {
+                    xmlns:    "http://schemas.microsoft.com/deepzoom/2008",
+                    Url:      "/nrtmosaic/services/image/deepzoom/?GAM=2.0&CNT=1.1&DeepZoom=" + rando.image + "_files/",
+                    Format:   "jpg",
+                    Overlap:  "0",
+                    TileSize: "256",
+                    Size: {
+                        // TODO: Bit dangerous here as we need to stay below MAX_INTEGER_VALUE for JavaScript
+                        Width:  rando.width*Math.pow(2, 27), // 13 = no recursion, 26 = 2 levels, 28+ crashes
+                        Height: rando.height*Math.pow(2, 27)
+                    }
+                }
+            }
         }
+        );
     }
-    }
-    }
-);
+    );
 </script>
 
 </body>
