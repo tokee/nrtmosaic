@@ -44,10 +44,8 @@ public class Config {
         String buildHome = "";
         if (System.getenv(NRTMOSAIC_HOME_KEY) != null) {
             buildHome = System.getenv(NRTMOSAIC_HOME_KEY);
-            log.info("*** Got from env " + buildHome);
         } else if (System.getProperty(NRTMOSAIC_HOME_KEY) != null) {
             buildHome = System.getProperty(NRTMOSAIC_HOME_KEY);
-            log.info("*** Got from prop " + buildHome);
         }
         if (!buildHome.isEmpty()) {
             if (!buildHome.endsWith("/")) {
@@ -56,15 +54,6 @@ public class Config {
             log.info("Using '" + buildHome + "' as root for property resolving");
         }
         home = buildHome;
-        for (Map.Entry<String, String> e: System.getenv().entrySet()) {
-            log.info(e.getKey() + ": " + e.getValue());
-        }
-        for (Map.Entry<Object, Object> entry: System.getProperties().entrySet()) {
-            if (Objects.equals(NRTMOSAIC_HOME_KEY, entry.getKey().toString())){
-                log.info("*** Located it! " + entry.getValue() + ", with direct get = " + System.getProperty(NRTMOSAIC_HOME_KEY));
-            }
-            log.info("Prop: " + entry.getKey() + ": " + entry.getValue());
-        }
 
         URL urlD = resolveURL(DEFAULT_PROPS);
         Properties confL = null;
