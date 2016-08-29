@@ -37,9 +37,13 @@ public class PyramidConcatenator {
         new PyramidConcatenator().concatenateInternal();
     }
 
+    public static boolean concatenationsExists() {
+        return Files.exists(Config.getCacheRoot().resolve("concatenated").resolve("0.dat"));
+    }
+
     private void concatenateInternal() throws IOException {
         long startTime = System.nanoTime();
-        if (Files.exists(cRoot.resolve("0.dat"))) {
+        if (concatenationsExists()) {
             if (!Config.getBool("corpuscreator.overwrite")) {
                 log.info("Skipping pyramid concatenation as concats in " + cRoot + " exists and overwrite == false");
                 return;

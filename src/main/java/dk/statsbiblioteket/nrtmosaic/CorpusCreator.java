@@ -28,6 +28,11 @@ public class CorpusCreator {
         }
         cacheGenerated = true;
 
+        if (!Config.getBool("corpuscreator.overwrite") && PyramidConcatenator.concatenationsExists()) {
+            log.info("Skipping pyramid creation as concatenated pyramids exists and corpuscreator.owerwrite==false");
+            return;
+        }
+
         try {
             PyramidCreator.create();
         } catch (Exception e) {
