@@ -1,0 +1,50 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>NRT-Mosaic demo</title>
+    <link rel="stylesheet" type="text/css" href="nrtmosaic.css" />
+    <script type="application/javascript" src="openseadragon.js"></script>
+    <script type="application/javascript" src="nrtmosaic.js"></script>
+</head>
+
+<body class="previewpage">
+
+<div id="zoom-display" class="openseadragon">
+</div>
+
+<script type="text/javascript">
+    getJSON("/nrtmosaic/services/image/random", function(err, rando) {
+
+        myDragon = OpenSeadragon({
+            id: "zoom-display",
+            zoomPerScroll: 2.0,
+            debugMode: false,
+
+            prefixUrl:     "images/",
+            showNavigator:  false,
+            wrapHorizontal: false,
+
+            tileSources: {
+                Image: {
+                    xmlns:    "http://schemas.microsoft.com/deepzoom/2008",
+                    Url:      "/nrtmosaic/services/image/deepzoom/?GAM=2.0&CNT=1.1&DeepZoom=" + rando.image + "_files/",
+                    Format:   "jpg",
+                    Overlap:  "0",
+                    TileSize: "256",
+                    Size: {
+                        // TODO: Bit dangerous here as we need to stay below MAX_INTEGER_VALUE for JavaScript
+                        Width:  rando.width*Math.pow(2, 27), // 13 = no recursion, 26 = 2 levels, 28+ crashes
+                        Height: rando.height*Math.pow(2, 27)
+                    }
+                }
+            }
+        }
+        );
+    }
+    );
+</script>
+
+</body>
+</html>
