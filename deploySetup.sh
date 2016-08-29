@@ -19,16 +19,17 @@ mvn clean package -DskipTests
 mv target/nrtmosaic*.war target/nrtmosaic.war
 
 # Add the setup-specific properties to the war
-pushd "$SETUP/war" > /dev/null
-zip -r ../../../target/nrtmosaic.war WEB-INF
+pushd "$SETUP" > /dev/null
+SETUP=`pwd`
 popd  > /dev/null
 
 # Copy the default gui to tomcat
 cp -r gui/ tomcat/webapps/
 
-# Add specific gui files and the updated WAR
+# Add specific gui files and adjust setenv.sh
 cp -r "$SETUP"/gui/* tomcat/webapps/gui/
 cp -r target/nrtmosaic.war tomcat/webapps/
+echo "export JAVA_OPTS=\"-Xmx1000m $JAVA_OPTS -Dnrtmosaic.home=$SETUP\"" > tomcat/bin/setenv.sh
 
 tomcat/bin/startup.sh
 

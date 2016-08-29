@@ -21,22 +21,52 @@ import javax.security.auth.login.Configuration;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.MalformedURLException;
 import java.net.URL;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Properties;
 
 public class Config {
     private static Log log = LogFactory.getLog(Config.class);
+    public static final String NRTMOSAIC_HOME_KEY = "nrtmosaic.home";
+
     private static final String DEFAULT_PROPS = "nrtmosaic.default.properties";
     private static final String PROPS = "nrtmosaic.properties";
+    private static final String home;
     private static final Properties conf;
 
     static { // Default values
-        ClassLoader loader = Thread.currentThread().getContextClassLoader();
-        URL urlD = loader.getResource(DEFAULT_PROPS);
+        String buildHome = "";
+        if (System.getenv(NRTMOSAIC_HOME_KEY) != null) {
+            buildHome = System.getenv(NRTMOSAIC_HOME_KEY);
+            log.info("*** Got from env " + buildHome);
+        } else if (System.getProperty(NRTMOSAIC_HOME_KEY) != null) {
+            buildHome = System.getProperty(NRTMOSAIC_HOME_KEY);
+            log.info("*** Got from prop " + buildHome);
+        }
+        if (!buildHome.isEmpty()) {
+            if (!buildHome.endsWith("/")) {
+                buildHome += "/";
+            }
+            log.info("Using '" + buildHome + "' as root for property resolving");
+        }
+        home = buildHome;
+        for (Map.Entry<String, String> e: System.getenv().entrySet()) {
+            log.info(e.getKey() + ": " + e.getValue());
+        }
+        for (Map.Entry<Object, Object> entry: System.getProperties().entrySet()) {
+            if (Objects.equals(NRTMOSAIC_HOME_KEY, entry.getKey().toString())){
+                log.info("*** Located it! " + entry.getValue() + ", with direct get = " + System.getProperty(NRTMOSAIC_HOME_KEY));
+            }
+            log.info("Prop: " + entry.getKey() + ": " + entry.getValue());
+        }
+
+        URL urlD = resolveURL(DEFAULT_PROPS);
         Properties confL = null;
         if (urlD == null) {
             log.info("No default properties " + DEFAULT_PROPS + " found. Attempting override properties");
@@ -52,11 +82,11 @@ public class Config {
             }
         }
 
-
-        URL urlO = loader.getResource(PROPS);
+        log.debug("Attempting load of override properties from " + buildHome + PROPS);
+        URL urlO = resolveURL(buildHome + PROPS);
         if (urlO == null) {
             if (confL == null) {
-                String message = "Neither " + DEFAULT_PROPS + " nor " + PROPS + " could be located";
+                String message = "Neither " + DEFAULT_PROPS + " nor " + buildHome + PROPS + " could be located";
                 log.fatal(message);
                 throw new IllegalStateException(message);
             }
@@ -101,7 +131,7 @@ public class Config {
         return Long.parseLong(conf.getProperty(key));
     }
     public static String getString(String key) {
-        return conf.getProperty(key);
+        return expand(conf.getProperty(key));
     }
     public static Boolean getBool(String key) {
         return Boolean.parseBoolean(conf.getProperty(key));
@@ -113,4 +143,37 @@ public class Config {
     public static Path getCacheRoot() {
         return Paths.get(getString("pyramid.cache"));
     }
+
+    /**
+     * Expand selected environment variables in the given String. Currently the list is {@link #NRTMOSAIC_HOME_KEY}.
+     * Expansion is "smart", so "${nrtmosaic.home}subfolder" and "${nrtmosaic.home}/subfolder" are both expanded
+     * to "thespecifiedhome/subfolder".
+     */
+    public static String expand(String str) {
+        return str == null ? null : str.replaceAll("[$][{]nrtmosaic.home[}]/?", home);
+    }
+
+    // Ugly hack to have it here and in Util. Cyclic dependencies stinks!
+    private static URL resolveURL(String resource) {
+        try {
+            Path file = Paths.get(resource);
+            if (Files.exists(file)) {
+                return file.toUri().toURL();
+            }
+        } catch (Exception e) {
+            throw new IllegalArgumentException("Exception resolving '" + resource + "' as file", e);
+        }
+
+        URL url = Thread.currentThread().getContextClassLoader().getResource(resource);
+        if (url != null) {
+            return url;
+        }
+
+        try {
+            return new URL(resource);
+        } catch (MalformedURLException e) {
+            throw new IllegalArgumentException("Exception resolving '" + resource + "' as URL", e);
+        }
+    }
+
 }

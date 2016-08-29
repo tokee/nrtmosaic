@@ -60,6 +60,7 @@ public class PyramidCreator {
                 if (line.isEmpty() || line.startsWith("#")) {
                     continue;
                 }
+                line = Config.expand(line); // We want to be able to specify relative to root
                 processed++;
                 UUID id = new UUID(line);
                 if (!overwrite && Files.exists(Config.imhotep.getFullPath(cacheRoot, id))) {
