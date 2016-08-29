@@ -78,11 +78,12 @@ first 4 hex-digit in the ID. `34fe/...`
 #### Install apache + iipimage
 nrtmosaic requires an image server (and some images), which runs under apache https or similar, using fastcgi.
 
-Under Ubuntu 16.04, this should be possible by calling `sudo apt-get install iipsrv`.
-Under 14.04 it is:
+Under Ubuntu 16.04, this should be possible by calling `sudo apt-get install iipimage-server`.
+Possibly it needs explicit installation of apache2 and fastcgi 
 
 ```bash
-apt-get install iipimage-server
+sudo apt-get install apache2 libapache2-mod-fastcgi iipimage-server
+sudo a2enmod cgi
 sudo service apache2 restart
 ```
 
@@ -91,8 +92,13 @@ That can be solved by
 ```bash
 sudo cp -r /usr/lib/iipimage-server /usr/share/iipimage-server
 ```
-and adjusting of the path in `/etc/apache2/mods-available/iipsrv.conf` accordingly.
+and adjusting of the path in `/etc/apache2/mods-available/iipsrv.conf` accordingly. Remember to restart apache2 with
+`sudo service apache2 restart`.
 
+Moreover, maybe `libapache2-mod-fcgid` should be used instead of `libapache2-mod-fastcgi`? 
+
+If more problems arises, try debugging with `sudo apache2ctl -t`.  
+   
 To verify installation, visit http://localhost/iipsrv/iipsrv.fcgi which should show a status page for IIPImage.
 
 
