@@ -25,12 +25,14 @@ import java.awt.image.AffineTransformOp;
 import java.awt.image.BufferedImage;
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
+import java.util.function.Consumer;
 import java.util.stream.Stream;
 
 public class Util {
@@ -99,6 +101,59 @@ public class Util {
             image.getRaster().setPixels(0, 0, w, h, pixels);
         }
         return image;
+    }
+
+    public static int countLines(String resource) throws IOException {
+        return processLines(resource, 0, Integer.MAX_VALUE, null);
+    }
+
+    /**
+     * @param start inclusive range start, where first line is 0.
+     * @param end   exclusive range start
+     */
+    public static int processLines(String resource, int start, int end, Consumer<String> consumer) throws IOException {
+        InputStream source;
+        try {
+            source = resolveURL(resource).openStream();
+        } catch (IOException e) {
+            throw new IOException("Unable to open stream '" + resource + "'", e);
+        }
+        if (source == null) {
+            throw new IOException("No resource available at '" + resource + "'");
+        }
+        int lines = 0;
+        int processed = lines;
+        try (BufferedReader in = new BufferedReader(new InputStreamReader(source, "utf-8"))) {
+            if (start == 0 && end == Integer.MAX_VALUE) {
+                log.debug("Processing all lines in " + resource);
+            } else {
+                log.debug("Processing lines " + start + " to " + end + " in " + resource);
+            }
+
+            String line;
+
+            while ((line = in.readLine()) != null) {
+                if (lines < start) {
+                    lines++;
+                    continue;
+                }
+                if (lines < end) {
+                    if (consumer != null) {
+                        consumer.accept(line);
+                    }
+                    processed++;
+                    lines++;
+                    continue;
+                }
+                lines++;
+                if (lines >= end) {
+                    break;
+                }
+            }
+        } catch (IOException e) {
+            throw new IOException("Unable to read lines from stream '" + resource + "'", e);
+        }
+        return processed;
     }
 
     public enum FILL_STYLE {
