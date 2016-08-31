@@ -5,9 +5,12 @@ html, body
 }
 
 body {
-	color: #000;
-	background: none #F5DEB3;
+	color: #FFF;
+	background: none #00000;
+	oldbackground: none #F5DEB3;
 	font-family: verdana, sans-serif;
+        padding: 0;
+        border: 0;
 }
 h1, h2, h3, h4, h5, h6 { margin-bottom: 0.2em; }
 h1						 	{ color: #32611F }
