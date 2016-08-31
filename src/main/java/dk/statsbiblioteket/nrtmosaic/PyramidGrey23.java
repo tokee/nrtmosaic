@@ -70,7 +70,7 @@ public class PyramidGrey23 {
             tileEdges[level] = lastSize;
         }
     }
-    public static final int MEM_DATA_LEVEL = 2; // Memory cache up to and including tile level 2 (2x2 * 6 pixels)
+    private final int MEM_DATA_LEVEL = Config.getInt("pyramid.cache.level");
     private final int memDataSize = tileOffsets[MEM_DATA_LEVEL+2];
     private final byte[] memData = new byte[memDataSize];
     private static final int MAX_DYNAMIC_DISTANCE = Config.getInt("tile.fill.dynamic.maxdistance");
@@ -406,6 +406,7 @@ public class PyramidGrey23 {
                     // Overflow is clipped
                     if (canvasIndex < canvas.length && canvasIndex >= 0 && dataIndex < byteCount
                         && dataIndex >= 0) {
+                        // TODO: Bulk loading og each row should speed this up, but requires a synchronized bulk metod
                         int grey = getByteAsInt(dataIndex);
                         canvas[canvasIndex] = grey == Util.MISSING_GREY ? missingReplacement : grey;
                     }

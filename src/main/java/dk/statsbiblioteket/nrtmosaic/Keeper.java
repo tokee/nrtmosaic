@@ -23,7 +23,6 @@ import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.*;
 
 /**
@@ -70,6 +69,7 @@ public class Keeper {
             throw new RuntimeException("The expected concatenation cache did not exist at " + concatRoot);
         }
         int i = 0;
+        long pixels = 0;
         while (Files.exists(concatRoot.resolve(i + ".dat"))) {
             Path concatFile = concatRoot.resolve(i++ + ".dat");
             if (!Files.exists(concatFile)) {
@@ -102,13 +102,19 @@ public class Keeper {
             int offset = 0;
             int mapCount = 0;
             while (offset < concatSize) {
-                addPyramid(Config.imhotep.createNew(mapped, offset));
+                pixels += addPyramid(Config.imhotep.createNew(mapped, offset));
                 offset += Config.imhotep.getBytecount();
                 mapCount++;
             }
             log.debug("Mapped " + mapCount + " pyramids from " + concatFile);
         }
         sortPyramids();
+        long backingPixels = (long)
+                (pixels * Math.pow(2, Config.getInt("prime.lastbasiclevel")-Config.getInt("prime.firstbasiclevel")));
+        log.info(String.format(
+                Locale.ENGLISH,
+                "Mapped %d pyramids in total. Source size = %,d pixels. Backing size (approximate) = %,d pixels",
+                pyramids.size(), pixels, backingPixels));
     }
 
     private void loadFromIndividualFiles(Path root) {
@@ -209,24 +215,29 @@ public class Keeper {
     }
 
 
-    private void addPyramid(Path dat) {
+    private long addPyramid(Path dat) {
         PyramidGrey23 pyramid;
         try {
             if ((pyramid = Config.imhotep.createNew(dat)) == null) {
-                return;
+                return 0;
             }
         } catch (Exception e) {
             log.warn("Unable to load Pyramid from '" + dat + "'", e);
-            return;
+            return 0;
         }
-        addPyramid(pyramid);
+        long pixels = addPyramid(pyramid);
         log.trace("Loaded #" + size() + " " + pyramid);
+        return pixels;
     }
 
-    private void addPyramid(PyramidGrey23 pyramid) {
+    /**
+     * @return pixel count for the source image for the pyramid.
+     */
+    private long addPyramid(PyramidGrey23 pyramid) {
         pyramidsTop.get(pyramid.getTopPrimary()/bucketSize).add(pyramid);
         pyramidsBottom.get(pyramid.getBottomPrimary()/bucketSize).add(pyramid);
         pyramids.put(pyramid.getID(), pyramid);
+        return pyramid.getSourceWidth()*pyramid.getSourceHeight();
     }
 
     private String listBuckets() {
