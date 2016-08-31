@@ -12,6 +12,14 @@ if [ "." == ".$SETUP" ]; then
     exit 2
 fi
 
+if [ ! -d "$SETUP" ]; then
+    if [ ! -d "setups/$SETUP" ]; then
+        echo "The stated setup folder '$SETUP' does not exist"
+        exit 3
+    fi
+    SETUP="setups/$SETUP"
+fi
+
 # Clean up and build the code
 tomcat/bin/shutdown.sh
 rm -r tomcat/webapps/nrtmosaic* tomcat/webapps/gui 
