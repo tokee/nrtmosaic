@@ -4,7 +4,7 @@
     <groupId>dk.statsbiblioteket</groupId>
     <artifactId>nrtmosaic</artifactId>
     <packaging>war</packaging>
-    <version>0.1-SNAPSHOT</version>
+    <version>1.0.0-SNAPSHOT</version>
     <name>nrtmosaic</name>
     <url>http://maven.apache.org</url>
 

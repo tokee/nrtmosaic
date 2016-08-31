@@ -166,6 +166,9 @@ public class Keeper {
     }
 
     private void sortPyramids() {
+        // TODO: The threaded builder seems to cause collisions. Maybe sync on adds to the two pyramid maps?
+//        sanityCheck("pyramidsTop", pyramidsTop);
+//        sanityCheck("pyramidsBottom", pyramidsBottom);
         for (int i = 0 ; i < bucketCount ; i++) {
             // TODO: Extend the sort to use primaries first
             Collections.sort(pyramidsTop.get(i), (o1, o2) -> o2.getTopSecondary()-o1.getTopSecondary());
@@ -173,6 +176,21 @@ public class Keeper {
         }
         log.info("Pyramids sorted into buckets " + listBuckets());
         collapsePyramids();
+    }
+
+    private void sanityCheck(String designation, List<List<PyramidGrey23>> pyramids) {
+        for (int i = 0 ; i < bucketCount ; i++) {
+            List<PyramidGrey23> pl = pyramids.get(i);
+            if (pl == null) {
+                log.error("Sanity checking: The " + designation + " at index " + i + " was null");
+            } else {
+                for (int j = 0; j < pl.size(); j++) {
+                    if (pl.get(j) == null) {
+                        log.error("The " + designation + " entry at " + i + ", " + j + " was null");
+                    }
+                }
+            }
+        }
     }
 
     private void collapsePyramids() {
