@@ -331,9 +331,15 @@ public class Keeper {
      * @return pixel count for the source image for the pyramid.
      */
     private long addPyramid(PyramidGrey23 pyramid) {
-        pyramidsTop.get(pyramid.getTopPrimary()/bucketSize).add(pyramid);
-        pyramidsBottom.get(pyramid.getBottomPrimary()/bucketSize).add(pyramid);
-        pyramids.put(pyramid.getID(), pyramid);
+        synchronized (pyramidsTop) {
+            pyramidsTop.get(pyramid.getTopPrimary() / bucketSize).add(pyramid);
+        }
+        synchronized (pyramidsBottom) {
+            pyramidsBottom.get(pyramid.getBottomPrimary() / bucketSize).add(pyramid);
+        }
+        synchronized (pyramids) {
+            pyramids.put(pyramid.getID(), pyramid);
+        }
         return pyramid.getSourceWidth()*pyramid.getSourceHeight();
     }
 
