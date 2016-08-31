@@ -37,7 +37,7 @@ cp -r gui/ tomcat/webapps/
 # Add specific gui files and adjust setenv.sh
 cp -r "$SETUP"/gui/* tomcat/webapps/gui/
 cp -r target/nrtmosaic.war tomcat/webapps/
-echo "export JAVA_OPTS=\"-Xmx1000m $JAVA_OPTS -Dnrtmosaic.home=$SETUP\"" > tomcat/bin/setenv.sh
+echo "export JAVA_OPTS=\"-Xmx3000m $JAVA_OPTS -Dnrtmosaic.home=$SETUP\"" > tomcat/bin/setenv.sh
 
 tomcat/bin/startup.sh
 

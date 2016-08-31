@@ -24,6 +24,11 @@ import java.nio.channels.FileChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * Keeps track of the Pyramids.
@@ -69,7 +74,10 @@ public class Keeper {
             throw new RuntimeException("The expected concatenation cache did not exist at " + concatRoot);
         }
         int i = 0;
-        long pixels = 0;
+        AtomicLong pixels = new AtomicLong(0);
+        ExecutorService executor = Executors.newFixedThreadPool(Config.getInt("keeper.mapping.threads"));
+        log.info(String.format("Mapping concatenated pyramid data from '%s' into Pyramids, using %d threads",
+                               concatRoot.toString(), Config.getInt("keeper.mapping.threads")));
         while (Files.exists(concatRoot.resolve(i + ".dat"))) {
             Path concatFile = concatRoot.resolve(i++ + ".dat");
             if (!Files.exists(concatFile)) {
@@ -99,22 +107,50 @@ public class Keeper {
             } catch (IOException e) {
                 throw new RuntimeException("Unable to map concatenated pyramids file " + concatFile, e);
             }
-            int offset = 0;
-            int mapCount = 0;
-            while (offset < concatSize) {
-                pixels += addPyramid(Config.imhotep.createNew(mapped, offset));
-                offset += Config.imhotep.getBytecount();
-                mapCount++;
-            }
-            log.debug("Mapped " + mapCount + " pyramids from " + concatFile);
+            executor.submit(new PyramidMapper(mapped, concatFile, concatSize, pixels));
+        }
+        executor.shutdown();
+        try {
+            executor.awaitTermination(1, TimeUnit.DAYS);
+        } catch (InterruptedException e) {
+            log.error("Waited more than 1 day for the mapping threads to finish. Giving up.");
+            throw new RuntimeException("Unable to finish mapping as it took more than 1 day", e);
         }
         sortPyramids();
-        long backingPixels = (long)
-                (pixels * Math.pow(2, Config.getInt("prime.lastbasiclevel")-Config.getInt("prime.firstbasiclevel")));
+        long backingPixels =
+                (long) (pixels.get() *
+                        Math.pow(2, Config.getInt("prime.lastbasiclevel")-Config.getInt("prime.firstbasiclevel")));
         log.info(String.format(
                 Locale.ENGLISH,
                 "Mapped %d pyramids in total. Source size = %,d pixels. Backing size (approximate) = %,d pixels",
-                pyramids.size(), pixels, backingPixels));
+                pyramids.size(), pixels.get(), backingPixels));
+    }
+
+    private class PyramidMapper implements Callable<Long> {
+        private final MappedByteBuffer mapped;
+        private final Path concatFile;
+        private final long concatSize;
+        private final AtomicLong pixels;
+
+        public PyramidMapper(MappedByteBuffer mapped, Path concatFile, long concatSize, AtomicLong pixels) {
+            this.mapped = mapped;
+            this.concatFile = concatFile;
+            this.concatSize = concatSize;
+            this.pixels = pixels;
+        }
+
+        @Override
+        public Long call() throws Exception {
+            int offset = 0;
+            long mapCount = 0;
+            while (offset < concatSize) {
+                pixels.addAndGet(addPyramid(Config.imhotep.createNew(mapped, offset)));
+                offset += Config.imhotep.getBytecount();
+                mapCount++;
+            }
+            log.info("Mapped " + mapCount + " pyramids from " + concatFile);
+            return mapCount;
+        }
     }
 
     private void loadFromIndividualFiles(Path root) {
@@ -135,6 +171,44 @@ public class Keeper {
             Collections.sort(pyramidsTop.get(i), (o1, o2) -> o2.getTopSecondary()-o1.getTopSecondary());
             Collections.sort(pyramidsBottom.get(i), (o1, o2) -> o2.getBottomSecondary()-o1.getBottomSecondary());
         }
+        log.info("Pyramids sorted into buckets " + listBuckets());
+        collapsePyramids();
+    }
+
+    private void collapsePyramids() {
+        int up = getAbs("pyramid.buckets.collapse.up");
+        int down = getAbs("pyramid.buckets.collapse.down");
+        if (up == 0 && down == 0) {
+            log.info("No bucket collapsing");
+            return;
+        }
+        log.debug("Collapsing " + pyramids.size() + " pyramids with bottom-up=" + up + ", top-down=" + down);
+        collapse(pyramidsTop, up, 0, 1);
+        collapse(pyramidsBottom, up, 0, 1);
+        collapse(pyramidsTop, down, pyramidsTop.size()-1, -1);
+        collapse(pyramidsBottom, down, pyramidsBottom.size()-1, -1);
+        log.debug("Collapsed " + pyramids.size() + " pyramids with bottom-up=" + up + ", top-down=" + down +
+                  " into buckets " + listBuckets());
+    }
+
+    private void collapse(List<List<PyramidGrey23>> pyramids, int needed, int start, int delta) {
+        List<PyramidGrey23> collected = new ArrayList<>();
+        for (int bucket = start ; bucket < pyramids.size() && bucket >= 0 ; bucket+=delta) {
+            collected.addAll(pyramids.get(bucket));
+            if (collected.size() >= needed) {
+                pyramids.set(bucket, collected);
+                return;
+            }
+            pyramids.set(bucket, Collections.emptyList());
+        }
+    }
+
+    private int getAbs(String key) {
+        String s = Config.getString(key);
+        return Math.min(pyramids.size(),
+                        s.endsWith("%") ?
+                                (int) (Double.valueOf(s.substring(0, s.length() - 1)) * 0.01 * pyramids.size()) :
+                                Integer.valueOf(s));
     }
 
     public int size() {
