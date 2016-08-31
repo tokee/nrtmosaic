@@ -124,7 +124,7 @@ public class PrimeTest {
         for (int dy = 0; dy < 3; dy++) {
             for (int dx = 0; dx < 6; dx++) {
                 tiles.add(Prime.instance().deepzoom(String.format(
-                        "%s/%d/%d_%d", BASE, level, x + dx, y + dy), "2.0", "1.2", true, false));
+                        "%s/%d/%d_%d", BASE, level, x + dx, y + dy), "2.0", "1.2", true, false, null));
             }
         }
         Util.show(tiles);

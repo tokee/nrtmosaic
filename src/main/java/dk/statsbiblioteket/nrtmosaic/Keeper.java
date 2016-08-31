@@ -247,17 +247,22 @@ public class Keeper {
     }
 
     // Attempts to extract UUID from origin and use cached fill color
-    // TODO: This should be deprecated due to the dynamic fill option
-    public int getFillGrey(String origin) {
-        if (Util.DEFAULT_FILL_STYLE == Util.FILL_STYLE.fixed) {
-            return Util.FILL_COLOR_INT;
+    public int getFillGrey(String origin, Integer dynamicGrey) {
+        switch (Util.DEFAULT_FILL_STYLE) {
+            case fixed:
+                return Util.FILL_COLOR_INT;
+            case average:
+                try {
+                    return getFillGrey(new UUID(origin));
+                } catch (IllegalArgumentException e) {
+                    log.warn("Unable to extract UUID from '" + origin + "'. Using default grey " + Util.FILL_COLOR_INT);
+                    return Util.FILL_COLOR_INT;
+                }
+            case dynamic:
+                return dynamicGrey == null ? Util.FILL_COLOR_INT : dynamicGrey;
+            default: throw new UnsupportedOperationException(
+                    "The fill style '" + Util.DEFAULT_FILL_STYLE + "' is not supported yet");
         }
-        try {
-            return getFillGrey(new UUID(origin));
-        } catch (IllegalArgumentException e) {
-            log.warn("Unable to extract UUID from '" + origin + "'. Using default fill grey " + Util.FILL_COLOR_INT);
-        }
-        return Util.FILL_COLOR_INT;
     }
     /**
      * Depending on property "tile.fill.style", this either returns the average grey for th pyramid or the default fill.

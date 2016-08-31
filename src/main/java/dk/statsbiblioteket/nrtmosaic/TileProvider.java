@@ -80,7 +80,7 @@ public class TileProvider {
         } catch (IOException e) {
             if (allowNA) {
                 log.debug("No tile at '" + source + "' but allowNA==true so default blank is used");
-                image = Util.getBlankTile(keeper.getFillGrey(imageURL.toString()));
+                image = Util.getBlankTile(keeper.getFillGrey(imageURL.toString(), null));
             } else {
                 throw new RuntimeException("Unable to resolve tile for source=" + source);
             }
@@ -89,7 +89,7 @@ public class TileProvider {
             throw new IllegalStateException("image is null for '" + source + "'");
         }
         if (image.getWidth() != edge || image.getHeight() != edge) {
-            int fillGrey = keeper.getFillGrey(imageURL.toString());
+            int fillGrey = keeper.getFillGrey(imageURL.toString(), null);
             log.trace("Padding tile '" + source + "' of " + image.getWidth() + "x" + image.getHeight() +
                       " pixels to " + edge + "x" + edge + " pixels with fill " + fillGrey);
             image = Util.pad(image, edge, edge, fillGrey);

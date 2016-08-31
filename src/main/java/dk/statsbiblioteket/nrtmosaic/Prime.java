@@ -91,10 +91,10 @@ public class Prime {
 
     private static final Pattern DEEPZOOM = Pattern.compile("(.*)/([0-9]+)/([0-9]+)_([0-9]+)(.*)");
     public BufferedImage deepzoom(String deepZoomSnippet, String gam, String cnt) throws IOException {
-        return deepzoom(deepZoomSnippet, gam, cnt, false, false);
+        return deepzoom(deepZoomSnippet, gam, cnt, false, false, null);
     }
-    public BufferedImage deepzoom(String deepZoomSnippet, String gam, String cnt, boolean pad, boolean border)
-            throws IOException {
+    public BufferedImage deepzoom(String deepZoomSnippet, String gam, String cnt, boolean pad, boolean border,
+                                  Integer dynamicGrey) throws IOException {
 
         // /avis-show/symlinks/9/c/0/5/9c05d958-b616-47c1-9e4f-63ec2dd9429e.jp2_files/0/0_0.jpg
         // Group 1                                                                    2 3 45
@@ -123,7 +123,7 @@ public class Prime {
         } else if (level > LAST_BASIC_LEVEL) {
             result = deepzoomRender(pre, fx, fy, level, post, gam, cnt);
         } else {
-            result = deepZoomBasic(deepZoomSnippet, fx, fy, level, gam, cnt, pad);
+            result = deepZoomBasic(deepZoomSnippet, fx, fy, level, gam, cnt, pad, dynamicGrey);
         }
         if (border) {
             Util.drawBorder(result);
@@ -133,7 +133,7 @@ public class Prime {
 
     // Topmost levels where NRTMosaic works as a plain image server
     private BufferedImage deepZoomBasic(String deepZoomSnippet, long fx, long fy, int level, String gam, String cnt,
-                                        boolean pad) throws IOException {
+                                        boolean pad, Integer dynamicGrey) throws IOException {
         log.trace("deepzoom basic tile for " + deepZoomSnippet + ", pad=" + pad);
         final long startTime = System.nanoTime();
         PyramidGrey23 pyramid = keeper.getPyramid(deepZoomSnippet);
@@ -153,7 +153,7 @@ public class Prime {
                  ", maxExistingX=" + maxExistingX);*/
             if (fx > maxExistingX || fy > maxExistingY) {
                 log.trace("Basic image has no tile for " + fx + "x" + fy + " at level " + level + ". Returning blank");
-                return Util.getBlankTile(keeper.getFillGrey(deepZoomSnippet));
+                return Util.getBlankTile(keeper.getFillGrey(deepZoomSnippet, dynamicGrey));
             }
         }
 
@@ -166,11 +166,11 @@ public class Prime {
             if (!pad) {
                 return unpadded;
             }
-            return Util.pad(unpadded, edge, edge, keeper.getFillGrey(deepZoomSnippet));
+            return Util.pad(unpadded, edge, edge, keeper.getFillGrey(deepZoomSnippet, dynamicGrey));
         } catch (IIOException e) {
             if (pad) {
                 log.debug("No basic tile at '" + deepZoomSnippet + "' but pad==true so default blank is returned");
-                return Util.getBlankTile(keeper.getFillGrey(deepZoomSnippet));
+                return Util.getBlankTile(keeper.getFillGrey(deepZoomSnippet, dynamicGrey));
             }
             throw new IIOException("Unable to read '" + external + "' as an image", e);
         } finally {
@@ -282,7 +282,8 @@ public class Prime {
         final String basicSnippet = toBasicDeepzoomSnippet(pyramid, redirectFX, redirectFY, level);
         log.debug("deepzoom redirect from " + pre + " " + fx + "x" + fy + ", level " + level + " to deepzoom " +
                   basicSnippet + " in " + (System.nanoTime()-startTime)/1000000+"ms");
-        return deepzoom(basicSnippet, gam, cnt, true, border);
+        // TODO: Resolve tile to derive dynamic fill grey and send it forward to the basic
+        return deepzoom(basicSnippet, gam, cnt, true, border, null);
     }
 
     private String toBasicDeepzoomSnippet(PyramidGrey23 pyramid, long redirectFX, long redirectFY, int level) {
