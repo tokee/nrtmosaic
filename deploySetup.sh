@@ -4,6 +4,7 @@
 # Script for easy deployment. At least easy for Toke.
 # But maybe it can be used for inspiration?
 #
+XMX="2000m"
 
 SETUP="$1"
 if [ "." == ".$SETUP" ]; then
@@ -37,7 +38,7 @@ cp -r gui/ tomcat/webapps/
 # Add specific gui files and adjust setenv.sh
 cp -r "$SETUP"/gui/* tomcat/webapps/gui/
 cp -r target/nrtmosaic.war tomcat/webapps/
-echo "export JAVA_OPTS=\"-Xmx3000m $JAVA_OPTS -Dnrtmosaic.home=$SETUP\"" > tomcat/bin/setenv.sh
+echo "export JAVA_OPTS=\"-Xmx${XMX} $JAVA_OPTS -Dnrtmosaic.home=$SETUP\"" > tomcat/bin/setenv.sh
 
 tomcat/bin/startup.sh
 
