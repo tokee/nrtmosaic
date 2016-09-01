@@ -143,8 +143,9 @@ public class Keeper {
         public Long call() throws Exception {
             int offset = 0;
             long mapCount = 0;
+            byte[] bulkGetBuffer = Config.imhotep.createBulkGetBuffer();
             while (offset < concatSize) {
-                pixels.addAndGet(addPyramid(Config.imhotep.createNew(mapped, offset)));
+                pixels.addAndGet(addPyramid(Config.imhotep.createNew(mapped, offset, bulkGetBuffer)));
                 offset += Config.imhotep.getBytecount();
                 mapCount++;
             }

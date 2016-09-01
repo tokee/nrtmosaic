@@ -23,6 +23,7 @@ import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.text.DecimalFormat;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -41,6 +42,7 @@ public class Prime {
     private final int edge;
     private final int FW;
     private final int FH;
+    private static final DecimalFormat MS = new DecimalFormat("#0.00");
 
     private final String IMAGE_SERVER;
     private final Pattern IMAGE_SERVER_PATH_REGEXP;
@@ -86,7 +88,7 @@ public class Prime {
         } catch (NullPointerException | IOException e) {
             log.error("Unable to open turtle.png", e);
         }
-        log.info("Prime constructed in " + (System.nanoTime()-startTime)/1000000 + "ms");
+        log.info("Prime constructed in " + MS.format((System.nanoTime()-startTime)/1000000.0) + "ms");
     }
 
     private static final Pattern DEEPZOOM = Pattern.compile("(.*)/([0-9]+)/([0-9]+)_([0-9]+)(.*)");
@@ -174,15 +176,18 @@ public class Prime {
             }
             throw new IIOException("Unable to read '" + external + "' as an image", e);
         } finally {
-            log.debug("deepzoom basic tile for " + deepZoomSnippet + ", pad=" + pad + " piped in " +
-                      (System.nanoTime()-startTime)/1000000 + "ms");
+            if (log.isDebugEnabled()) {
+                log.debug("deepzoom basic tile for " + deepZoomSnippet + ", pad=" + pad + " piped in " +
+                          MS.format((System.nanoTime() - startTime) / 1000000.0) + "ms");
+            }
         }
     }
 
     // Middle level where NRTMosaic renders tiles
     private BufferedImage deepzoomRender(
             String pre, long fx, long fy, int level, String post, String gam, String cnt) {
-        log.debug("deepzoom render tile for " + pre + ", " + fx + "x" + fy + ", level " + level);
+        log.trace("deepzoom render tile for " + pre + ", " + fx + "x" + fy + ", level " + level);
+        final long startTime = System.nanoTime();
         final int zoomFactor = (int) Math.pow(2, level - LAST_BASIC_LEVEL);
 
         // Coordinates for the basic tile: ...3ec2dd9429e.jp2_files/LAST_BASIC_LEVEL/sourceFX_sourceFY
@@ -200,7 +205,10 @@ public class Prime {
         final int renderFY = (int) (fy - origoFY);
         final int renderLevel = level - LAST_BASIC_LEVEL + 1;
 
-        return tile.renderImage(renderFX, renderFY, renderLevel, null);
+        BufferedImage image = tile.renderImage(renderFX, renderFY, renderLevel, null);
+        log.debug("deepzoom render from " + pre + " " + fx + "x" + fy + ", level " + level +
+                  " in " + MS.format((System.nanoTime()-startTime)/1000000.0) + "ms");
+        return image;
 //            return TileProvider.getTileRender("/home/te/tmp/nrtmosaic/256/source_9c05d958-b616-47c1-9e4f-63ec2dd9429e_13_13_13.jpg", 0, 0, 1);
     }
 
@@ -281,7 +289,7 @@ public class Prime {
         // /avis-show/symlinks/9/c/0/5/9c05d958-b616-47c1-9e4f-63ec2dd9429e.jp2_files/0/0_0.jpg
         final String basicSnippet = toBasicDeepzoomSnippet(pyramid, redirectFX, redirectFY, level);
         log.debug("deepzoom redirect from " + pre + " " + fx + "x" + fy + ", level " + level + " to deepzoom " +
-                  basicSnippet + " in " + (System.nanoTime()-startTime)/1000000+"ms");
+                  basicSnippet + " in " + MS.format((System.nanoTime()-startTime)/1000000.0) + "ms");
         // TODO: Resolve tile to derive dynamic fill grey and send it forward to the basic
         return deepzoom(basicSnippet, gam, cnt, true, border, null);
     }

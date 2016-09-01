@@ -78,15 +78,18 @@ public class TileProvider {
         try {
             image = ImageIO.read(imageURL);
         } catch (IOException e) {
-            if (allowNA) {
-                log.debug("No tile at '" + source + "' but allowNA==true so default blank is used");
-                image = Util.getBlankTile(keeper.getFillGrey(imageURL.toString(), null));
-            } else {
-                throw new RuntimeException("Unable to resolve tile for source=" + source);
+            if (!allowNA) {
+                throw new RuntimeException("Unable to resolve tile for source=" + source, e);
             }
+            log.debug("No tile at '" + source + "' but allowNA==true so default blank is used");
+            image = Util.getBlankTile(keeper.getFillGrey(imageURL.toString(), null));
         }
         if (image == null) {
-            throw new IllegalStateException("image is null for '" + source + "'");
+            if (!allowNA) {
+                throw new IllegalStateException("image is null for '" + source + "'");
+            }
+            log.debug("Got null tile at '" + source + "' but allowNA==true so default blank is used");
+            image = Util.getBlankTile(keeper.getFillGrey(imageURL.toString(), null));
         }
         if (image.getWidth() != edge || image.getHeight() != edge) {
             int fillGrey = keeper.getFillGrey(imageURL.toString(), null);

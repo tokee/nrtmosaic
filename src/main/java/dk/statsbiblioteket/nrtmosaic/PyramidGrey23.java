@@ -39,6 +39,7 @@ public class PyramidGrey23 {
     private static final Log log = LogFactory.getLog(PyramidGrey23.class);
 
     private final ByteBuffer backingData;
+    private final byte[] bulkGetBuffer;
     private final int origo;
     private final int maxTileLevel; // 1:1x1, 2:2x2, 4:4x4, 5:16x16, 6:32:32, 7:64x64, 8:128x128
     private final int byteCount; // Number of significant bytes in data
@@ -71,7 +72,7 @@ public class PyramidGrey23 {
         }
     }
     private final int MEM_DATA_LEVEL = Config.getInt("pyramid.cache.level");
-    private final int memDataSize = tileOffsets[MEM_DATA_LEVEL+2];
+    private final int memDataSize = tileOffsets[MEM_DATA_LEVEL+1]; // TODO: Sanity check this!
     private final byte[] memData = new byte[memDataSize];
     private static final int MAX_DYNAMIC_DISTANCE = Config.getInt("tile.fill.dynamic.maxdistance");
 
@@ -80,6 +81,8 @@ public class PyramidGrey23 {
         this.byteCount = tileOffsets[maxTileLevel+1];
         this.backingData = ByteBuffer.allocate(byteCount);
         this.origo = 0;
+        final int edge = getTileEdge(maxTileLevel);
+        this.bulkGetBuffer = new byte[edge*edge];
     }
 /*    private PyramidGrey23(byte[] data, int origo, int maxTileLevel) {
         this.maxTileLevel = maxTileLevel;
@@ -108,14 +111,28 @@ public class PyramidGrey23 {
             }
         }
         this.backingData = ByteBuffer.wrap(data, origo, byteCount);
+        final int edge = getTileEdge(maxTileLevel);
+        this.bulkGetBuffer = new byte[edge*edge];
         syncMemData();
     }
 
-    public PyramidGrey23(MappedByteBuffer buffer, int origo, int maxTileLevel) {
+    /**
+     * Create a Pyramid based on existing data. The backing buffer is expected to be shared between multiple Pyramids
+     * and access is synchronized on the buffer itself.
+     * @param buffer backing data for the pyramid.
+     * @param origo offset into the backing data.
+     * @param maxTileLevel the maximum tile level within the backing data, which indirectly is also the byte length.
+     * @param bulkGetBuffer buffer for bulk data access. Can be shared between all Pyramids backed by the same buffer.
+     *                      The buffer must be of size maxTileEdge^2.
+     */
+    public PyramidGrey23(MappedByteBuffer buffer, int origo, int maxTileLevel, byte[] bulkGetBuffer) {
         this.maxTileLevel = maxTileLevel;
         this.byteCount = tileOffsets[maxTileLevel+1];
         this.backingData = buffer;
         this.origo = origo;
+        //final int edge = getTileEdge(maxTileLevel);
+        //this.bulkGetBuffer = new byte[edge*edge];
+        this.bulkGetBuffer = bulkGetBuffer;
         syncMemData();
     }
 
@@ -128,8 +145,12 @@ public class PyramidGrey23 {
     public PyramidGrey23 createNew(UUID id) {
         return new PyramidGrey23(maxTileLevel).setID(id);
     }
-    public PyramidGrey23 createNew(MappedByteBuffer buffer, int offset) {
-        return new PyramidGrey23(buffer, offset, maxTileLevel);
+    public PyramidGrey23 createNew(MappedByteBuffer buffer, int offset, byte[] bulkGetBuffer) {
+        return new PyramidGrey23(buffer, offset, maxTileLevel, bulkGetBuffer);
+    }
+    public byte[] createBulkGetBuffer() {
+        final int edge = getTileEdge(maxTileLevel);
+        return new byte[edge*edge];
     }
 
     public final void setByte(int index, byte value) {
@@ -153,6 +174,32 @@ public class PyramidGrey23 {
     public final long getByteAsLong(int index) {
         return 0xFF & getByte(index);
     }
+    // Always uses backing data
+    private void copyToBuffer(int sourceOffset, int[] buffer, int bufferOffset, int length, int backgroundGrey) {
+        if (length < 1) {
+            return;
+        }
+        synchronized (backingData) {
+            try {
+                backingData.position(origo + sourceOffset);
+                backingData.get(bulkGetBuffer, 0, length);
+            } catch (IndexOutOfBoundsException e) {
+                throw new RuntimeException(String.format(
+                        "IndexOutOfBounds for origo=%d, sourceOffset=%d, length=%d, o+d+l=%d, backing.limit=%d",
+                        origo, sourceOffset, length, origo+sourceOffset+length, backingData.limit()));
+            }
+            for (int i = 0; i < length; i++) {
+                final int grey = 0xFF & bulkGetBuffer[i];
+                buffer[bufferOffset + i] = grey == Util.MISSING_GREY ? backgroundGrey : grey;
+            }
+/*        for (int i = 0 ; i < length ; i++) {
+            // TODO: Bulk loading of each row should speed this up, but requires a synchronized bulk method
+            int grey = getByteAsInt(sourceOffset+i);
+            buffer[bufferOffset+i] = grey;
+        }*/
+        }
+    }
+
 
     public PyramidGrey23 setID(UUID id) {
         setLong(IDPART1_INDEX, id.getFirst64());
@@ -186,7 +233,7 @@ public class PyramidGrey23 {
 
     private void setShort(int offset, long value) {
         for (int i = 0; i < 2; ++i) {
-          setByte(offset+i, value >>> (2-i-1 << 3));
+            setByte(offset+i, value >>> (2-i-1 << 3));
         }
     }
     private short getShort(int offset) {
@@ -198,7 +245,7 @@ public class PyramidGrey23 {
     }
     public void setLong(int offset, long value) { // TODO: Change get & set of atomics to ByteBuffer native
         for (int i = 0; i < 8; ++i) {
-          setByte(offset+i, value >>> (8-i-1 << 3));
+            setByte(offset+i, value >>> (8-i-1 << 3));
         }
     }
     public long getLong(int offset) {
@@ -232,7 +279,7 @@ public class PyramidGrey23 {
 
     //public byte[] getData() {
 //        return data;
-  //  }
+    //  }
 
     // 1: 1x1
     // 2: 2x2
@@ -377,9 +424,11 @@ public class PyramidGrey23 {
         syncMemData();
     }
 
-    private synchronized void syncMemData() {
-        backingData.position(origo);
-        backingData.get(memData, 0, memDataSize);
+    private void syncMemData() {
+        synchronized (backingData) {
+            backingData.position(origo);
+            backingData.get(memData, 0, memDataSize);
+        }
     }
 
     /**
@@ -395,18 +444,75 @@ public class PyramidGrey23 {
      */
     public void copyPixels(
             int level, int fx, int fy, int[] canvas, int origoX, int origoY, int canvasWidth, int missingReplacement) {
+        if (level <= MEM_DATA_LEVEL) {
+            copyPixelsOld(level, fx, fy, canvas, origoX, origoY, canvasWidth, missingReplacement);
+            return;
+        }
+        if (origoX >= canvasWidth) {
+            return;
+        }
+        final int tileEdge = getTileEdge(level);
+        // TODO: 2 strategies: When there is x-clipping and everything else
+        if (origoX + tileEdge > canvasWidth) {
+            if (log.isDebugEnabled()) {
+                log.debug("Fallback to old copyPixels with origoX=" + origoX + ", tileEdge=" + tileEdge +
+                          ", canvasWidth=" + canvasWidth);
+            }
+            copyPixelsOld(level, fx, fy, canvas, origoX, origoY, canvasWidth, missingReplacement);
+            return;
+        }
+        //log.debug("New copyPixels");
+
+        // TODO Special case level 0
+        final int tileOffset = getTileOffset(level, fx, fy);
+
+        for (int ty = 0 ; ty < tileEdge ; ty++) {
+            final int dataOrigo = tileOffset + ty*tileEdge;
+            final int canvasOrigo = (origoY + ty) * canvasWidth + origoX;
+            final int iStart = Math.max(0, canvasOrigo);
+            final int iEnd = Math.min(tileEdge+canvasOrigo, canvas.length);
+
+            copyToBuffer(dataOrigo-canvasOrigo+iStart, canvas, iStart, iEnd-iStart, missingReplacement);
+//            adjustBackground(canvas, iStart, iEnd-iStart, missingReplacement);
+
+/*
+            for (int tx = 0 ; tx < iEnd-iStart ; tx++) {
+                // TODO: Bulk loading of each row should speed this up, but requires a synchronized bulk method
+                int grey = getByteAsInt(dataOrigo-canvasOrigo+iStart+tx);
+                canvas[iStart+tx] = grey == Util.MISSING_GREY ? missingReplacement : grey;
+            }
+ */
+        }
+    }
+
+    private void adjustBackground(int[] buffer, int offset, int length, int backgroundGrey) {
+        for (int i = 0 ; i < length ; i++) {
+            if (buffer[offset+i] == Util.MISSING_GREY) {
+                buffer[offset+i] = backgroundGrey;
+            }
+        }
+    }
+
+    public void copyPixelsOld(
+            int level, int fx, int fy, int[] canvas, int origoX, int origoY, int canvasWidth, int missingReplacement) {
+        // TODO: Consider optimized copy from memory
+/*        if (level <= MEM_DATA_LEVEL) {
+            copyPixelsFromMemCache(level, fx, fy, canvas, origoX, origoY, canvasWidth, missingReplacement);
+        }*/
+
         // TODO Special case level 0
         final int tileEdge = getTileEdge(level);
         final int tileOffset = getTileOffset(level, fx, fy);
         for (int ty = 0 ; ty < tileEdge ; ty++) {
-            for (int tx = 0; tx < tileEdge; tx++) {
+            for (int tx = 0 ; tx < tileEdge ; tx++) {
                 if (origoX+tx < canvasWidth) {
                     final int canvasIndex = (origoY + ty) * canvasWidth + origoX + tx;
                     final int dataIndex = tileOffset + (ty * tileEdge) + tx;
                     // Overflow is clipped
-                    if (canvasIndex < canvas.length && canvasIndex >= 0 && dataIndex < byteCount
-                        && dataIndex >= 0) {
-                        // TODO: Bulk loading og each row should speed this up, but requires a synchronized bulk metod
+                    if (canvasIndex < canvas.length && canvasIndex >= 0 && dataIndex < byteCount && dataIndex >= 0) {
+/*if (dataIndex >= memDataSize) {
+    log.info("Index " + dataIndex + " >= " + memDataSize + ", level=" + level);
+} */
                         int grey = getByteAsInt(dataIndex);
                         canvas[canvasIndex] = grey == Util.MISSING_GREY ? missingReplacement : grey;
                     }
@@ -414,5 +520,4 @@ public class PyramidGrey23 {
             }
         }
     }
-
 }

@@ -187,8 +187,10 @@ public class Tile23 {
             }
         }
         reuse.getRaster().setPixels(0, 0, edge, edge, canvas);
-        log.debug("Rendered tile for " + subTileX + "x" + subTileY + ", level " + level + " in " +
-                  (System.nanoTime() - startNS) / 1000000 + "ms");
+        if (log.isTraceEnabled()) {
+            log.trace("Rendered tile for " + subTileX + "x" + subTileY + ", level " + level + " in " +
+                      (System.nanoTime() - startNS) + "ns");
+        }
         return reuse;
     }
 
