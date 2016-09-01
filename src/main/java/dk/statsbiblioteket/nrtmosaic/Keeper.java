@@ -117,9 +117,8 @@ public class Keeper {
             throw new RuntimeException("Unable to finish mapping as it took more than 1 day", e);
         }
         sortPyramids();
-        long backingPixels =
-                (long) (pixels.get() *
-                        Math.pow(2, Config.getInt("prime.lastbasiclevel")-Config.getInt("prime.firstbasiclevel")));
+        long scale = (long) Math.pow(2, Config.getInt("prime.lastbasiclevel") - Config.getInt("prime.firstbasiclevel"));
+        long backingPixels = pixels.get() * scale*scale;
         log.info(String.format(
                 Locale.ENGLISH,
                 "Mapped %d pyramids in total. Source size = %,d pixels. Backing size (approximate) = %,d pixels",
