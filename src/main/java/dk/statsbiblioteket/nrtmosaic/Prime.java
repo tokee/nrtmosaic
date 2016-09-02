@@ -110,6 +110,11 @@ public class Prime {
         if (!deepMatch.matches()) {
             throw new IllegalAccessError("The deepzoom request '" + deepZoomSnippet + "' could not be parsed");
         }
+        PyramidGrey23 pyramid = keeper.getPyramid(deepZoomSnippet);
+        if (pyramid == null && Config.getBool("prime.onlyallowknown")) {
+            throw new IllegalArgumentException("Requested DZI for unknown pyramid with query " + deepZoomSnippet);
+        }
+
         final String pre = deepMatch.group(1);
         final int level = Integer.parseInt(deepMatch.group(2));
         final long fx = Long.parseLong(deepMatch.group(3));
