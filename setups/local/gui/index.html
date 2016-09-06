@@ -8,12 +8,18 @@
     <script type="application/javascript" src="openseadragon.js"></script>
     <script type="application/javascript" src="nrtmosaic.js"></script>
 </head>
+<!-- Build using nrtmosaic - https://github.com/tokee/nrtmosaic 
+     Toke Eskildsen, te@statsbiblioteket.dk
+-->
 
 <body class="previewpage">
 
 <div id="zoom-display" class="openseadragon">
 </div>
 
+<!-- Pretty standard OpenSeadragon-setup below as all the magic is in the back-end:
+     We request a random image instead of using a fixed one and make the
+     virtual size of the image 2^27 times bigger than the real size. -->
 <script type="text/javascript">
     getJSON("/nrtmosaic/services/image/random", function(err, rando) {
 
@@ -21,7 +27,8 @@
             id: "zoom-display",
             zoomPerScroll: 2.0,
             debugMode: false,
-
+            blendTime: 0.5,
+    
             prefixUrl:     "images/",
             showNavigator:  false,
             wrapHorizontal: false,
