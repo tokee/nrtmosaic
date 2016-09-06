@@ -67,7 +67,9 @@ public class Config {
                 }
                 log.info("Loaded default properties from " + urlD);
             } catch (Exception e) {
-                throw new RuntimeException("Unable to load default properties from '" + urlD + "'", e);
+                String message = "Unable to load default properties from '" + urlD + "'";
+                log.fatal(message + ". nrtmosaic will not be able to start", e);
+                throw new RuntimeException(message, e);
             }
         }
 
@@ -76,7 +78,7 @@ public class Config {
         if (urlO == null) {
             if (confL == null) {
                 String message = "Neither " + DEFAULT_PROPS + " nor " + buildHome + PROPS + " could be located";
-                log.fatal(message);
+                log.fatal(message + ". nrtmosaic will not be able to start");
                 throw new IllegalStateException(message);
             }
             log.info("Only " + DEFAULT_PROPS + " available. No overrides loaded");
@@ -94,7 +96,9 @@ public class Config {
                     }
                 }
             } catch (Exception e) {
-                throw new RuntimeException("Unable to load override properties from '" + urlO + "'", e);
+                String message = "Unable to load override properties from '" + urlO + "'";
+                log.fatal(message + ". nrtmosaic will not be able to start", e);
+                throw new RuntimeException(message, e);
             }
         }
         conf = confL;
@@ -164,5 +168,4 @@ public class Config {
             throw new IllegalArgumentException("Exception resolving '" + resource + "' as URL", e);
         }
     }
-
 }

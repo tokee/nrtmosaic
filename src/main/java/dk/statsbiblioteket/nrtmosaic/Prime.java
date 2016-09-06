@@ -55,7 +55,8 @@ public class Prime {
             try {
                 singleton = new Prime();
             } catch (Exception e) {
-                log.fatal("Exception initializing Prime", e);
+                String message = "Fatal exception when initializing Prime";
+                log.fatal(message + ". nrtmosaic will not be able to start", e);
                 throw e;
             }
         }
@@ -88,7 +89,7 @@ public class Prime {
         } catch (NullPointerException | IOException e) {
             log.error("Unable to open turtle.png", e);
         }
-        log.info("Prime constructed in " + MS.format((System.nanoTime()-startTime)/1000000.0) + "ms");
+        log.info("Prime constructed in " + MS.format((System.nanoTime() - startTime) / 1000000.0) + "ms");
     }
 
     private static final Pattern DEEPZOOM = Pattern.compile("(.*)/([0-9]+)/([0-9]+)_([0-9]+)(.*)");
@@ -396,8 +397,8 @@ public class Prime {
         return DZI.
                 replaceFirst("(?s)(.*Width=\")([0-9]+)(\".*)",
                              "$1" + Long.toString(Math.min(width*dziFactor, JAVASCRIPT_MAX)) + "$3").
-                          replaceFirst("(?s)(.*Height=\")([0-9]+)(\".*)",
-                                       "$1" + Long.toString(Math.min(height*dziFactor, JAVASCRIPT_MAX)) + "$3");
+                replaceFirst("(?s)(.*Height=\")([0-9]+)(\".*)",
+                             "$1" + Long.toString(Math.min(height*dziFactor, JAVASCRIPT_MAX)) + "$3");
     }
 
 /*    private String getDZIXML(long width, long height) {
