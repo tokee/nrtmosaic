@@ -2,17 +2,13 @@
 
 Fast mosaic creation from pre-processed source images
 
+Demo with 1 million images in one: http://labs.statsbiblioteket.dk/zoom/
+
 ## Background
 
-The raison d'être for nrtmosaic is to provide tiles for a newspaper page, visually made up by other newspaper pages.
-It is used at a project at statsbiblioteket.dk.
+The raison d'être for nrtmosaic is to provide tiles for a newspaper page, visually made up by other newspaper pages. It is used at the project zoom at statsbiblioteket.dk. While nrtmosaic is sought to be generally usable, the focus is internal use.
 
-While nrtmosaic is sought to be generally usable, the focus is internal use.
-
-As newspaper pages has an aspect ratio fairly near to 2:3. To create a mosaic from an image, the square pixels from 
-the source must be mapped to non-square pages. This can be done by mapping 1x3-pixel from the source to 1x2 pages.
-To do this, we need fast access to average color (greyscale intensity really) for the top, middle and bottom third
-of all pages.
+As newspaper pages has an aspect ratio fairly near to 2:3. To create a mosaic from an image, the square pixels from the source must be mapped to non-square pages. This can be done by mapping 1x3-pixel from the source to 1x2 pages. To do this, we need fast access to average color (greyscale intensity really) for the top, middle and bottom third of all pages.
 
 ## Numbers & math
 
